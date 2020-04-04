@@ -1,0 +1,55 @@
+# Build files
+out
+target
+gen
+bin
+*.class
+
+# Netbeans files
+nbproject*
+
+# IntelliJ files
+.idea
+*.iml
+
+# BlueJ files
+*.ctxt
+
+# Eclipse files
+.settings
+.classpath
+.project
+.externalToolBuilders
+.metadata
+maven-eclipse.xml
+
+# UltraEdit .bak files
+*.bak
+
+# Vim files
+*.swp
+
+# Mac files
+.DS_Store
+
+#JShell files
+jshell.history
+
+# Windows files
+Thumbs.db
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.deb
+/nbactions.xml
+
+# Log file
+*.log
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+

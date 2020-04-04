@@ -79,7 +79,7 @@ public class BugFreeFalcoCLI extends BugFreePIRBase {
         then(f.isDone()).isTrue();
         then(STDOUT.getLog()).contains("Welcome to Falco")
                              .contains("usage:")
-                             .contains("com.github.stefanofornari.falco.FalcoCLI");
+                             .contains("ste.falco.FalcoCLI");
     }
     
     @Test

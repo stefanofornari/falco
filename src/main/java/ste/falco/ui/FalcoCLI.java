@@ -31,7 +31,7 @@ public class FalcoCLI extends SoundMotionDetector {
         
         if (args.length > 0) {
             System.out.println("usage:");
-            System.out.println("com.github.stefanofornari.falco.FalcoCLI");
+            System.out.println("ste.falco.FalcoCLI [--help]");
             return;
         }
         

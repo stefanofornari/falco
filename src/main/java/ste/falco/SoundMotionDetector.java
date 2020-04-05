@@ -24,7 +24,6 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 

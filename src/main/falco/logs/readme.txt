@@ -1,1 +1,1 @@
-Configure logging system by editing conf/logging.properties
+Configure java logging by editing conf/logging.properties

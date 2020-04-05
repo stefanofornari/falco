@@ -19,7 +19,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>src/main/bin</directory>
+            <directory>src/main/falco/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <lineEnding>unix</lineEnding>
             <fileMode>0750</fileMode>
@@ -33,11 +33,11 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>src/main/conf</directory>
+            <directory>src/main/falco/conf</directory>
             <outputDirectory>conf</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>src/main/logs</directory>
+            <directory>src/main/falco/logs</directory>
             <outputDirectory>logs</outputDirectory>
         </fileSet>
         <fileSet>

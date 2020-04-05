@@ -43,10 +43,8 @@ public class FalcoCLI extends SoundMotionDetector {
                 Thread.sleep(200);
             }
         } catch (Exception x) {
-            x.printStackTrace();
+            LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
-        
-        System.out.println("CHECK!");
     }
     
     public FalcoCLI() throws Exception {

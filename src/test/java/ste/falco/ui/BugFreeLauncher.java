@@ -17,7 +17,11 @@ package ste.falco.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
@@ -33,42 +37,66 @@ public class BugFreeLauncher {
     
     @Test
     public void launcher_from_home() throws Exception {
-        Process p = launch("src/main", "bin/falco");
-        p.waitFor();  // the process will end because of missing pi4j libraries,
-                      // therefore it exits immediately
-                      
-        then(new String(p.getInputStream().readAllBytes())).contains("-- started");
+        String[] ret = launch();  // the process will end because of missing 
+                                   // pi4j libraries, therefore it exits 
+                                   // immediately
+
+        then(ret[1]).contains("-- started");
     }
     
     @Test
     public void launcher_from_not_home() throws Exception {
-        Process p = launch(TMPDIR.getRoot().getPath(), new File("src/main/bin/falco").getAbsolutePath());
-        p.waitFor();  // the process will end because of missing pi4j libraries,
-                      // therefore it exits immediately
-                      
-        then(new String(p.getInputStream().readAllBytes())).contains("-- started");
+        String[] ret = launch(false); // the process will end because of missing 
+                                      // pi4j libraries, // therefore it exits 
+                                      // immediately
+        
+        then(ret[1]).contains("-- started");
+        then(new File(ret[0], "logs")).isNotEmptyDirectory();
     }
     
     @Test
     public void launcher_with_help() throws Exception {
-        Process p = launch("src/main", "bin/falco",  "--help");
-        p.waitFor();  // the process will end because of --help
+        String[] ret = launch("--help"); // the process will end because of --help
                       
-        then(new String(p.getInputStream().readAllBytes()))
-            .contains("usage:")
-            .doesNotContain("-- started");
+        then(ret[1]).contains("usage:").doesNotContain("-- started");
     }
     
     // --------------------------------------------------------- private methods
     
-    private Process launch(String dir, String... command) throws IOException {
+    private String[] launch(boolean changeHome, String... args) throws Exception {
+        String[] ret = new String[2];
+        
+        File home = TMPDIR.newFolder(); ret[0] = home.getAbsolutePath();
+        FileUtils.copyDirectory(new File("src/main/falco"), home);
+        File falco = new File(home, "bin/falco");
+        falco.setExecutable(true);
+        
+        List<String> command = new ArrayList<>();
+        if (!changeHome) {
+            command.add(new File(home, "bin/falco").getAbsolutePath());
+        } else {
+            command.add("bin/falco");
+        }
+        Collections.addAll(command, args);
+        
         ProcessBuilder pb = new ProcessBuilder();
-        pb.directory(new File(dir))
-          .command(command);
-         Map<String, String> env = pb.environment();
-         env.put("CLASSPATH", System.getProperty("java.class.path"));
-         
-         return pb.start();
+        if (changeHome) {
+            pb.directory(home);
+        }
+        pb.command(command);
+        
+        Map<String, String> env = pb.environment();
+        env.put("CLASSPATH", System.getProperty("java.class.path"));
+        
+        Process p = pb.start(); p.waitFor();
+        
+        ret[1] = new String(p.getInputStream().readAllBytes());
+        
+        return ret;
+    }
+    
+    private String[] launch(String... command) throws Exception {
+        return launch(true, command);
     }
     
 }

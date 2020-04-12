@@ -18,11 +18,8 @@ package ste.falco;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +54,7 @@ public class SoundMotionDetector extends MotionDetector {
     @Override
     public void startup() throws Exception {
         super.startup();
-        clip = getClip();
+        clip = SoundUtils.getClip(mixer);
         clip.open(
             AudioSystem.getAudioInputStream(
                 new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
@@ -76,15 +73,4 @@ public class SoundMotionDetector extends MotionDetector {
         clip.setFramePosition(0);
         clip.start();
     };
-    
-    // --------------------------------------------------------- private methods
-    
-    private Clip getClip() throws LineUnavailableException {
-        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED,
-                                             AudioSystem.NOT_SPECIFIED,
-                                             16, 2, 4,
-                                             AudioSystem.NOT_SPECIFIED, true);
-        DataLine.Info info = new DataLine.Info(Clip.class, format);
-        return (Clip)mixer.getLine(info);
-    }
 }

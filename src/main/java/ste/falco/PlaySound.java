@@ -22,19 +22,21 @@ public class PlaySound {
         }
         
         //  AudioSystem.getMixerInfo()[2]
-        Mixer mixer = AudioSystem.getMixer(AudioSystem.getMixerInfo()[2]);
-        Clip clip = (Clip)mixer.getLine(new DataLine.Info(Clip.class, null));
+        //Mixer mixer = AudioSystem.getMixer(AudioSystem.getMixerInfo()[2]);
+        //Clip clip = (Clip)mixer.getLine(new DataLine.Info(Clip.class, null));
         
         AudioInputStream audioIn = AudioSystem.getAudioInputStream(
             new BufferedInputStream(
-                PlaySound.class.getResourceAsStream("/red-tailed-hawk-sound.wav")
+                PlaySound.class.getResourceAsStream("/sounds/" + args[0])
             )
         );
-        //clip = AudioSystem.getClip();
+        Clip clip = AudioSystem.getClip();
         clip.open(audioIn);
         clip.start();
         
-        Thread.sleep(5000);
+        while(true) {
+            Thread.sleep(250);
+        }
     }
     
 }

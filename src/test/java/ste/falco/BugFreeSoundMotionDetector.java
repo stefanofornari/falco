@@ -15,8 +15,6 @@
  */
 package ste.falco;
 
-import ste.falco.SoundMotionDetector;
-import ste.falco.MotionDetector;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.RaspiPin;
@@ -247,7 +245,10 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
     
     // ------------------------------------------------------ ClipEventsRecorder
     
-    private class ClipEventsRecorder implements LineListener {
+    //
+    // TODO: move to xtest
+    //
+    public static class ClipEventsRecorder implements LineListener {
         
         public final List<String> events = new ArrayList<>();
 

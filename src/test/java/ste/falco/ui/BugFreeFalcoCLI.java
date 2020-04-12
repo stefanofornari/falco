@@ -16,7 +16,6 @@
 package ste.falco.ui;
 
 import ste.falco.BugFreePIRBase;
-import ste.falco.ui.FalcoCLI;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPin;
@@ -24,6 +23,7 @@ import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
+import javax.sound.sampled.LineUnavailableException;
 import org.apache.commons.lang3.StringUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
@@ -33,7 +33,9 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import ste.falco.ui.FalcoCLI.Heartbeat;
 import ste.xtest.logging.ListLogHandler;
+import ste.xtest.reflect.PrivateAccess;
 
 /**
  *
@@ -120,5 +122,41 @@ public class BugFreeFalcoCLI extends BugFreePIRBase {
         then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected");
         
         LOG.removeHandler(h);
+    }
+    
+    @Test
+    public void heartbeat() throws Exception {
+        
+        try (FalcoCLI cli = new FalcoCLI()) {
+            Heartbeat hb = (Heartbeat)PrivateAccess.getInstanceValue(cli, "heartbeatTask");
+            then(hb.period).isEqualTo(5*60*1000); // 5 minutes in milliseconds
+        }
+        
+        CounterTask counter = new CounterTask(25);
+        try (FalcoCLI cli = new FalcoCLI(counter)) {
+            Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(10);
+        }
+        
+        counter = new CounterTask(50);
+        try (FalcoCLI cli = new FalcoCLI(counter)) {
+            Thread.sleep(50); then(counter.value).isGreaterThan(0).isLessThan(5);
+        }
+    }
+    
+    // ------------------------------------------------------------- CounterTask
+    
+    class CounterTask extends Heartbeat {
+        
+        public int value = 0;
+        
+        public CounterTask(int period) throws Exception {
+            super(period);
+        }
+
+        @Override
+        public void run() {
+            System.out.println(this.getClass().getName());
+            ++value;
+        }
     }
 }

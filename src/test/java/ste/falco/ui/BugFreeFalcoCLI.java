@@ -134,12 +134,12 @@ public class BugFreeFalcoCLI extends BugFreePIRBase {
         
         CounterTask counter = new CounterTask(25);
         try (FalcoCLI cli = new FalcoCLI(counter)) {
-            Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(10);
+            Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(6);
         }
         
         counter = new CounterTask(50);
         try (FalcoCLI cli = new FalcoCLI(counter)) {
-            Thread.sleep(50); then(counter.value).isGreaterThan(0).isLessThan(5);
+            Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(4);
         }
     }
     

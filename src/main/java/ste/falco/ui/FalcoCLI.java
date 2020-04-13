@@ -92,7 +92,7 @@ public class FalcoCLI extends SoundMotionDetector {
         super.startup();
         ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
         
-        ses.scheduleAtFixedRate(heartbeatTask, 0, 25, TimeUnit.MILLISECONDS);
+        ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
     }
     
     // ----------------------------------------------------------- HeartbeatTask

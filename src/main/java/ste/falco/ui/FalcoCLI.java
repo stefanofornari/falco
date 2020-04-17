@@ -96,7 +96,7 @@ public class FalcoCLI extends SoundMotionDetector {
             super.moved();
         } else {
             if (LOG.isLoggable(Level.INFO)) {
-                LOG.info("too early or not in day light - skip playing");
+                LOG.info("too early or not in day light - I am muted");
             }
         }
     }

@@ -18,3 +18,7 @@ Functionality
 ° Play a sound when motion is detected
 ° No more then 1 play every 10 minutes
 ° No play between 21:00 and 7:00
+
+TODO
+----
+- sig handling to mute/unmute; eg: kill -s USR1 <pid>

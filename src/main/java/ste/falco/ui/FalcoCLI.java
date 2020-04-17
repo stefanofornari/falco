@@ -17,9 +17,12 @@ package ste.falco.ui;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -36,10 +39,12 @@ import ste.falco.SoundUtils;
 public class FalcoCLI extends SoundMotionDetector {
     
     private static final int DEFAULT_HEARTBEAT_PERIOD = 5*60*1000; // 5 minutes in milliseconds
-    
     private static Logger LOG = Logger.getLogger("ste.falco");
     
+    private final Clock CLOCK = Clock.systemDefaultZone();
+    
     private Heartbeat heartbeatTask;
+    private LocalDateTime lastMoved = LocalDateTime.now(CLOCK).minusHours(24); // just to make sure the first ervent is capture
     
     
     public static void main(String... args) {
@@ -83,17 +88,41 @@ public class FalcoCLI extends SoundMotionDetector {
     
     @Override
     public void moved() {
-        super.moved();
-        LOG.info("motion detected");
+        if (LOG.isLoggable(Level.INFO)) {
+            LOG.info("motion detected");
+        }
+        if (shallPlay()) {
+            lastMoved = LocalDateTime.now(CLOCK);
+            super.moved();
+        } else {
+            if (LOG.isLoggable(Level.INFO)) {
+                LOG.info("too early or not in day light - skip playing");
+            }
+        }
     }
     
     @Override 
     public void startup() throws Exception {
         super.startup();
+        
         ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
         
         ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
     }
+    
+    // --------------------------------------------------------- private methods
+    
+    private boolean shallPlay() {
+        LocalDateTime now = LocalDateTime.now(CLOCK);
+        int hour = now.getHour();
+        
+        if ((hour < 20) && (hour > 7)) {
+            return now.minusMinutes(10).isAfter(lastMoved);
+        }
+        
+        return false;
+    }
+    
     
     // ----------------------------------------------------------- HeartbeatTask
     

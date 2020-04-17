@@ -1,18 +1,20 @@
-Configure OpenJDK Sound
------------------------
+Configure Bluetooth
+-------------------
 
-sudo vi /etc/java-8-openjdk/sound.properties
+Make sure bluetooth, pulseaudio are installed
+(see http://youness.net/raspberry-pi/how-to-connect-bluetooth-headset-or-speaker-to-raspberry-pi-3 -
+src/docs/How To Connect Bluetooth Headset Or Speaker To Raspberry Pi 3.pdf
+in case not available any more online)
 
-Comment out the icedtea classpath configs:
 
-#javax.sound.sampled.Clip=org.classpath.icedtea.pulseaudio.PulseAudioMixerProvider
-#javax.sound.sampled.Port=org.classpath.icedtea.pulseaudio.PulseAudioMixerProvider
-#javax.sound.sampled.SourceDataLine=org.classpath.icedtea.pulseaudio.PulseAudioMixerProvider
-#javax.sound.sampled.TargetDataLine=org.classpath.icedtea.pulseaudio.PulseAudioMixerProvider
+Connect RIP
+-----------
+See (https://tutorials-raspberrypi.com/connect-and-control-raspberry-pi-motion-detector-pir/ - 
+src/docs/Connect and control Raspberry Pi motion detector PIR.pdf inc ase not 
+available any more online)
 
-Remove the comments from the sun classpath configs:
-
-javax.sound.sampled.Clip=com.sun.media.sound.DirectAudioDeviceProvider
-javax.sound.sampled.Port=com.sun.media.sound.PortMixerProvider
-javax.sound.sampled.SourceDataLine=com.sun.media.sound.DirectAudioDeviceProvider
-javax.sound.sampled.TargetDataLine=com.sun.media.sound.DirectAudioDeviceProvider
+Functionality
+-------------
+° Play a sound when motion is detected
+° No more then 1 play every 10 minutes
+° No play between 21:00 and 7:00

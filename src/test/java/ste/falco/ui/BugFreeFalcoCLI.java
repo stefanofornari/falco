@@ -127,7 +127,7 @@ public class BugFreeFalcoCLI extends BugFreePIRBase {
         then(h.getMessages()).containsExactly("falco started", "motion detected");
         
         PIR.up(); Thread.sleep(50); PIR.down();
-        then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected", "too early or not in day light - skip playing");
+        then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected", "too early or not in day light - I am muted");
         
         LOG.removeHandler(h);
     }

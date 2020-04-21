@@ -55,6 +55,8 @@ plughw:CARD=ALSA,DEV=2
     Hardware device with all software conversions
 ```
 
+Run:
+
 > java -cp lib/falco-${project.version}.jar ste.falco.PlaySound red-tailed-hawk-sound.wav plughw:0,2
 
 

@@ -40,10 +40,16 @@
             <directory>src/main/falco/logs</directory>
             <outputDirectory>logs</outputDirectory>
         </fileSet>
-        <fileSet>
-            <includes>
-                <include>LICENSE</include>
-            </includes>
-        </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>README.md</source>
+            <outputDirectory></outputDirectory>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>LICENSE</source>
+            <outputDirectory></outputDirectory>
+        </file>
+    </files>
 </assembly>

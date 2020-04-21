@@ -1,15 +1,6 @@
 # falco
 Raspberry PI based pigeons dissuader
 
-Configure Bluetooth
--------------------
-
-Make sure bluetooth, pulseaudio are installed
-(see http://youness.net/raspberry-pi/how-to-connect-bluetooth-headset-or-speaker-to-raspberry-pi-3 -
-src/docs/How To Connect Bluetooth Headset Or Speaker To Raspberry Pi 3.pdf
-in case not available any more online)
-
-
 Connect RIP
 -----------
 See (https://tutorials-raspberrypi.com/connect-and-control-raspberry-pi-motion-detector-pir/ -

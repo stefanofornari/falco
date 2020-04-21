@@ -23,15 +23,15 @@ the sound device to use.
 
 For example, given the output of aplay -L below
 
-> null
->     Discard all samples (playback) or generate zero samples (capture)
-> default:CARD=ALSA
->     bcm2835 ALSA, bcm2835 ALSA
->     Default Audio Device
-> sysdefault:CARD=ALSA
-
+  null
+      Discard all samples (playback) or generate zero samples (capture)
+  default:CARD=ALSA
+      bcm2835 ALSA, bcm2835 ALSA 
+      Default Audio Device
+  sysdefault:CARD=ALSA
     bcm2835 ALSA, bcm2835 ALSA
     Default Audio Device
+    
 dmix:CARD=ALSA,DEV=0
     bcm2835 ALSA, bcm2835 ALSA
     Direct sample mixing device

@@ -9,9 +9,9 @@ available any more online)
 
 Features
 --------
-° Play a sound when motion is detected
-° No more then 1 play every 10 minutes
-° No play between 21:00 and 7:00
+* Play a sound when motion is detected
+* No more then 1 play every 10 minutes
+* No play between 21:00 and 7:00
 
 Utilities
 ---------
@@ -19,16 +19,17 @@ Utilities
 PlaySound: testing app to play a sound in the resources, optionally specifying
 the sound device to use.
 
-java -cp lib/falco-${project.version}.jar ste.falco.PlaySound red-tailed-hawk-sound.wav [device]
+> java -cp lib/falco-${project.version}.jar ste.falco.PlaySound red-tailed-hawk-sound.wav [device]
 
 For example, given the output of aplay -L below
 
-null
-    Discard all samples (playback) or generate zero samples (capture)
-default:CARD=ALSA
-    bcm2835 ALSA, bcm2835 ALSA
-    Default Audio Device
-sysdefault:CARD=ALSA
+> null
+>     Discard all samples (playback) or generate zero samples (capture)
+> default:CARD=ALSA
+>     bcm2835 ALSA, bcm2835 ALSA
+>     Default Audio Device
+> sysdefault:CARD=ALSA
+
     bcm2835 ALSA, bcm2835 ALSA
     Default Audio Device
 dmix:CARD=ALSA,DEV=0

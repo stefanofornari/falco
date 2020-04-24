@@ -59,7 +59,7 @@ Run:
 
 > java -cp lib/falco-${project.version}.jar ste.falco.PlaySound red-tailed-hawk-sound.wav plughw:0,2
 
-Note that resource must be relative to /sounds.
+Note that resource is relative to /sounds.
 
 TODO
 ----

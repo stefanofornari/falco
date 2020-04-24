@@ -19,7 +19,7 @@ Utilities
 PlaySound: testing app to play a sound in the resources, optionally specifying
 the sound device to use.
 
-> java -cp lib/falco-${project.version}.jar ste.falco.PlaySound red-tailed-hawk-sound.wav [device]
+> java -cp lib/falco-${project.version}.jar ste.falco.PlaySound resource [device]
 
 For example, given the output of aplay -L below
 

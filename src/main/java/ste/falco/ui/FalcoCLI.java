@@ -37,29 +37,29 @@ import ste.falco.SoundUtils;
  *
  */
 public class FalcoCLI extends SoundMotionDetector {
-    
+
     private static final int DEFAULT_HEARTBEAT_PERIOD = 5*60*1000; // 5 minutes in milliseconds
     private static Logger LOG = Logger.getLogger("ste.falco");
-    
+
     private final Clock CLOCK = Clock.systemDefaultZone();
-    
+
     private Heartbeat heartbeatTask;
     private LocalDateTime lastMoved = LocalDateTime.now(CLOCK).minusHours(24); // just to make sure the first ervent is capture
-    
-    
+
+
     public static void main(String... args) {
         System.out.println("Welcome to Falco");
-        
+
         if (args.length > 0) {
             System.out.println("usage:");
             System.out.println("ste.falco.FalcoCLI [--help]");
             return;
         }
-        
+
         System.out.println("-- started");
         try (FalcoCLI moctor = new FalcoCLI()) {
             LOG.info("falco started");
-            
+
             while (true) {
                 Thread.sleep(200);
             }
@@ -67,17 +67,17 @@ public class FalcoCLI extends SoundMotionDetector {
             LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
     }
-    
+
     public FalcoCLI() throws Exception {
         super("/sounds/red-tailed-hawk-sound.wav");
         this.heartbeatTask = new Heartbeat(DEFAULT_HEARTBEAT_PERIOD);
         startup();
     }
-    
+
     /**
-     * 
+     *
      * @param heartbeatTask the task to be executed at heartbeat
-     * 
+     *
      * @throws Exception same as startup()
      */
     protected FalcoCLI(Heartbeat heartbeatTask) throws Exception  {
@@ -85,7 +85,7 @@ public class FalcoCLI extends SoundMotionDetector {
         this.heartbeatTask = heartbeatTask;
         startup();
     }
-    
+
     @Override
     public void moved() {
         if (LOG.isLoggable(Level.INFO)) {
@@ -100,42 +100,42 @@ public class FalcoCLI extends SoundMotionDetector {
             }
         }
     }
-    
-    @Override 
+
+    @Override
     public void startup() throws Exception {
         super.startup();
-        
+
         ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-        
+
         ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
     }
-    
+
     // --------------------------------------------------------- private methods
-    
+
     private boolean shallPlay() {
         LocalDateTime now = LocalDateTime.now(CLOCK);
         int hour = now.getHour();
-        
+
         if ((hour < 20) && (hour > 7)) {
             return now.minusMinutes(10).isAfter(lastMoved);
         }
-        
+
         return false;
     }
-    
-    
+
+
     // ----------------------------------------------------------- HeartbeatTask
-    
+
     protected static class Heartbeat implements Runnable {
-        
+
         public final long period;
-        
+
         private Clip clip;
-        
+
         /**
          * @param period the delay in milliseconds between to beats
          */
-        public Heartbeat(long period) 
+        public Heartbeat(long period)
             throws LineUnavailableException, UnsupportedAudioFileException, IOException {
             this.period = period;
             clip = SoundUtils.getClip(AudioSystem.getMixer(null));

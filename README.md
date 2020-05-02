@@ -27,11 +27,11 @@ For example, given the output of aplay -L below
 null
     Discard all samples (playback) or generate zero samples (capture)
 default:CARD=ALSA
-    bcm2835 ALSA, bcm2835 ALSA 
+    bcm2835 ALSA, bcm2835 ALSA
     Default Audio Device
 sysdefault:CARD=ALSA
     bcm2835 ALSA, bcm2835 ALSA
-    Default Audio Device    
+    Default Audio Device
 dmix:CARD=ALSA,DEV=0
     bcm2835 ALSA, bcm2835 ALSA
     Direct sample mixing device
@@ -63,4 +63,4 @@ Note that resource is relative to /sounds.
 
 TODO
 ----
-- sig handling to mute/unmute; eg: kill -s USR1 <pid>
+- a way to command the server from cmd line

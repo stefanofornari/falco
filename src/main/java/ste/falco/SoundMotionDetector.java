@@ -28,17 +28,17 @@ import org.apache.commons.lang3.StringUtils;
  *
  */
 public class SoundMotionDetector extends MotionDetector {
-    
+
     public final String sound;
-    
+
     private Mixer mixer;
     private Clip clip;
-    
+
     public SoundMotionDetector(String sound) {
         if (StringUtils.isBlank(sound)) {
             throw new IllegalArgumentException("sound can not be blank or null");
         }
-        
+
         try {
             IOUtils.resourceToURL(sound);
         } catch (IOException x) {
@@ -47,10 +47,10 @@ public class SoundMotionDetector extends MotionDetector {
             );
         }
         this.sound = sound;
-        
+
         mixer = AudioSystem.getMixer(null);
     }
-    
+
     @Override
     public void startup() throws Exception {
         super.startup();
@@ -60,14 +60,15 @@ public class SoundMotionDetector extends MotionDetector {
                 new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
             ));
     }
-        
+
     @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
         if (event.getState().isHigh()) {
             moved();
         }
     }
-    
+
+    @Override
     public void moved() {
         super.moved(); // it checks everything is ready
         clip.setFramePosition(0);

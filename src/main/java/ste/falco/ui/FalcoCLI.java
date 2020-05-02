@@ -147,6 +147,10 @@ public class FalcoCLI extends SoundMotionDetector {
 
         @Override
         public void run() {
+            if (LOG.isLoggable(Level.FINEST)) {
+                LOG.finest("heartbeat");
+            }
+
             clip.setFramePosition(0);
             clip.start();
         }

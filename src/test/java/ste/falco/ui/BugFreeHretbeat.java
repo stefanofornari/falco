@@ -15,6 +15,8 @@
  */
 package ste.falco.ui;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.sampled.Clip;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
@@ -22,6 +24,7 @@ import ste.falco.BugFreeSoundMotionDetector;
 import ste.falco.ui.FalcoCLI.Heartbeat;
 import ste.xtest.concurrent.Condition;
 import ste.xtest.concurrent.WaitFor;
+import ste.xtest.logging.ListLogHandler;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
@@ -29,17 +32,26 @@ import ste.xtest.reflect.PrivateAccess;
  * @author ste
  */
 public class BugFreeHretbeat {
-    
+
     @Test
-    public void plays_heartbeat() throws Exception {
+    public void plays_heartbeat_with_log() throws Exception {
         BugFreeSoundMotionDetector.ClipEventsRecorder rec = new BugFreeSoundMotionDetector.ClipEventsRecorder();
         Heartbeat hb = new Heartbeat(100);
-        
+
+        //
+        // Logging set up
+        //
+        Logger LOG = Logger.getLogger("ste.falco");
+        ListLogHandler h = new ListLogHandler();
+        LOG.addHandler(h);
+        LOG.setLevel(Level.FINEST);
+        // ---
+
         Clip clip = (Clip)PrivateAccess.getInstanceValue(hb, "clip");
         clip.addLineListener(rec);
-        
+
         hb.run();
-        
+
         Condition c = new Condition() {
             @Override
             public boolean check() {
@@ -50,6 +62,7 @@ public class BugFreeHretbeat {
 
         new WaitFor(2500, c);
         then(rec.events).containsExactly("Start", "Stop");
+        then(h.getMessages(Level.FINEST)).containsOnly("heartbeat");
     }
-    
+
 }

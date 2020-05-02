@@ -1,4 +1,4 @@
-package ste.falco;
+package ste.falco.ui;
 
 import java.io.BufferedInputStream;
 import javax.sound.sampled.AudioSystem;

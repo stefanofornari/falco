@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.stefanofornari</groupId>
     <artifactId>falco</artifactId>
-    <version>1.1.1</version>
+    <version>1.2-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <properties>
@@ -130,7 +130,7 @@
     <scm>
         <connection>scm:git:git@github.com:stefanofornari/falco.git</connection>
         <url>https://github.com/stefanofornari/falco</url>
-        <tag>falco-1.1.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>

@@ -17,6 +17,7 @@ package ste.falco.ui;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
@@ -24,6 +25,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
@@ -64,6 +71,7 @@ public class FalcoCLI extends SoundMotionDetector {
                 Thread.sleep(200);
             }
         } catch (Exception x) {
+            x.printStackTrace();
             LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
     }
@@ -105,9 +113,17 @@ public class FalcoCLI extends SoundMotionDetector {
     public void startup() throws Exception {
         super.startup();
 
+        jmxSetup();
+
         ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
         ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        try { jmxShutdown(); } catch (Exception x) {}
     }
 
     // --------------------------------------------------------- private methods
@@ -122,6 +138,26 @@ public class FalcoCLI extends SoundMotionDetector {
 
         return false;
     }
+
+    private void jmxSetup()
+        throws MalformedObjectNameException, InstanceAlreadyExistsException,
+               MBeanRegistrationException, NotCompliantMBeanException {
+        ManagementFactory
+            .getPlatformMBeanServer()
+            .registerMBean(
+                new TrafficControl(this),
+                new ObjectName("ste.falco.jmx:name=TrafficControl")
+            );
+    }
+    private void jmxShutdown()
+        throws MalformedObjectNameException, InstanceNotFoundException, MBeanRegistrationException  {
+        ManagementFactory
+            .getPlatformMBeanServer()
+            .unregisterMBean(
+                new ObjectName("ste.falco.jmx:name=TrafficControl")
+            );
+    }
+
 
 
     // ----------------------------------------------------------- HeartbeatTask
@@ -155,4 +191,26 @@ public class FalcoCLI extends SoundMotionDetector {
             clip.start();
         }
     }
+
+    // ---------------------------------------------------------- TrafficControl
+
+    public static interface TrafficControlMBean {
+
+        public void move();
+    };
+
+    public static class TrafficControl implements TrafficControlMBean {
+
+        private final FalcoCLI falco;
+
+        public TrafficControl(FalcoCLI falco) {
+            this.falco = falco;
+        }
+
+        public void move() {
+            falco.moved();
+        }
+
+    };
+
 }

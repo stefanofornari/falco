@@ -17,19 +17,34 @@ package ste.falco;
 
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 /**
  *
- * 
+ *
  */
 
 abstract public class BugFreePIRBase {
     protected static final PIREmulator PIR = new PIREmulator();
-    
+
     protected GpioPinDigitalInput pin = null;
-    
-    
+
+    @Rule
+    public final TestRule watcherRule = new TestWatcher() {
+        protected void starting(Description description) {
+          String out = Thread.currentThread().getName() + ": " + description.getMethodName();
+          System.out.printf(
+              "\n%s\n%s\n", out, StringUtils.repeat("-", out.length())
+          );
+        };
+    };
+
+
     @BeforeClass
     public static void before_all() {
         GpioFactory.setDefaultProvider(PIR);

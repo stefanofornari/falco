@@ -24,8 +24,10 @@ set_java() {
 
 set_classpath() {
   # Setting classpath
-  cd "$1"
-  for jarfile in *.jar; do export CLASSPATH="$CLASSPATH":"$1/$jarfile"; done
+  if [ -d "$1" ]; then
+    cd "$1"
+    for jarfile in *.jar; do export CLASSPATH="$CLASSPATH":"$1/$jarfile"; done
+  fi
 }
 
 #

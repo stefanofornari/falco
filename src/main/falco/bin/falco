@@ -23,10 +23,25 @@ set_classpath "$home/lib"
 cd "$home"
 
 #
-# Default configuration (use conf/serverone.conf to customize)
+# Default configuration (use conf/falco.conf to customize)
 #
 JAVA_OPTS=
 LOG_OPTS="-Djava.util.logging.config.file=$home/conf/logging.properties"
+
+#
+# JMX configuration
+# -----------------
+#
+# Uncomment as needed
+#
+#JMX_OPTS="-Dcom.sun.management.jmxremote"
+#JMX_OPTS="$JMX_OPTS -Dcom.sun.management.jmxremote.port=9010"
+#JMX_OPTS="$JMX_OPTS -Dcom.sun.management.jmxremote.rmi.port=9010"
+#JMX_OPTS="$JMX_OPTS -Dcom.sun.management.jmxremote.local.only=false"
+#JMX_OPTS="$JMX_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
+#JMX_OPTS="$JMX_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+#JMX_OPTS="$JMX_OPTS -Djava.rmi.server.hostname=$(hostname).local"
+
 SERVICE_USER_ID=pi
 CURRENT_USER_ID=$(id -u -n)
 if [ $CURRENT_USER_ID = "root" ]
@@ -48,4 +63,4 @@ then
 fi
 
 #echo $uidcmd $javacmd $JAVA_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@"
-nohup $uidcmd $javacmd $JAVA_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@" > "$home/logs/output.log"
+nohup $uidcmd $javacmd $JAVA_OPTS $JMX_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@" > "$home/logs/output.log"

@@ -15,6 +15,7 @@
  */
 package ste.falco.ui;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -120,9 +121,13 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
     public void do_not_play_too_frequently() throws Exception {
         BugFreeSoundMotionDetector.ClipEventsRecorder rec = new BugFreeSoundMotionDetector.ClipEventsRecorder();
 
+        FixedClock clock = new FixedClock(ZoneId.systemDefault());
+        clock.millis = Instant.parse("2007-12-03T13:15:30.00Z").toEpochMilli();  // just to make sure we are in daylight
         try (FalcoCLI cli = new FalcoCLI()) {
             Clip clip = (Clip)PrivateAccess.getInstanceValue(cli, "clip");
             clip.addLineListener(rec);
+            PrivateAccess.setInstanceValue(cli, "CLOCK", clock);
+            PrivateAccess.setInstanceValue(cli, "lastMoved", LocalDateTime.now(clock).minusHours(24));
 
             cli.moved();  // first time: play
 
@@ -133,14 +138,12 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
                 }
             });
 
+            clock.millis += 5*60*1000;  // 5 minutes later
             cli.moved();  Thread.sleep(50); // second time in a row: don't play
             then(rec.events).hasSize(2);
 
-            FixedClock clock = new FixedClock(ZoneId.systemDefault());
-            clock.millis = System.currentTimeMillis() + 10*60*1000;  // 10 minutes in the future
-            PrivateAccess.setInstanceValue(cli, "CLOCK", clock);
-
-            cli.moved();  Thread.sleep(50); // third time: play
+            clock.millis += 6*60*1000;  // 11 minutes later
+            cli.moved();  // third time: play
 
             new WaitFor(5000, new Condition() {
                 @Override
@@ -244,7 +247,6 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
         @Override
         public void run() {
-            System.out.println(this.getClass().getName());
             ++value;
         }
     }

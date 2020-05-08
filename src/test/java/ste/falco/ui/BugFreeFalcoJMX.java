@@ -16,6 +16,7 @@
 package ste.falco.ui;
 
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
@@ -63,7 +64,32 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
             }
 
         });
-        then(h.getMessages()).containsExactly("falco started", "motion detected");
+        then(h.getMessages()).containsSequence("falco started", "motion detected");
+    }
+
+    @Test
+    public void play() throws Exception {
+        Logger LOG = Logger.getLogger("ste.falco");
+        ListLogHandler h = new ListLogHandler();
+        LOG.addHandler(h);
+        LOG.setLevel(Level.FINEST);
+
+        runMainClass();
+
+        MBeanServer jmx = waitForTrafficControl();
+        jmx.invoke(
+            new ObjectName(TRAFFIC_CONTROL_NAME),
+            "play", null, null
+        );
+
+        new WaitFor(1000, new Condition() {
+            @Override
+            public boolean check() {
+                return (h.getMessages(Level.FINEST).size() > 1);
+            }
+
+        });
+        then(h.getMessages(Level.FINEST)).contains("playing /sounds/red-tailed-hawk-sound.wav");
     }
 
     // --------------------------------------------------------- private methods

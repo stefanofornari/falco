@@ -61,6 +61,8 @@ Run:
 
 Note that resource is relative to /sounds.
 
+JMX configuration
+To enable JMX for remote management uncomment the relevant properties in bin/falco
+
 TODO
 ----
-- a way to command the server from cmd line

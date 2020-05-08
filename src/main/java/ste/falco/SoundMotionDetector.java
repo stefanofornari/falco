@@ -18,6 +18,8 @@ package ste.falco;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.Mixer;
@@ -33,6 +35,8 @@ public class SoundMotionDetector extends MotionDetector {
 
     private Mixer mixer;
     private Clip clip;
+
+    protected final Logger LOG = Logger.getLogger("ste.falco");
 
     public SoundMotionDetector(String sound) {
         if (StringUtils.isBlank(sound)) {
@@ -71,6 +75,9 @@ public class SoundMotionDetector extends MotionDetector {
     @Override
     public void moved() {
         super.moved(); // it checks everything is ready
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.finest("playing " + sound);
+        }
         clip.setFramePosition(0);
         clip.start();
     };

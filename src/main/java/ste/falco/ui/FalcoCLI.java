@@ -71,7 +71,6 @@ public class FalcoCLI extends SoundMotionDetector {
                 Thread.sleep(200);
             }
         } catch (Exception x) {
-            x.printStackTrace();
             LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
     }
@@ -101,7 +100,7 @@ public class FalcoCLI extends SoundMotionDetector {
         }
         if (shallPlay()) {
             lastMoved = LocalDateTime.now(CLOCK);
-            super.moved();
+            play();
         } else {
             if (LOG.isLoggable(Level.INFO)) {
                 LOG.info("too early or not in day light - I am muted");
@@ -124,6 +123,16 @@ public class FalcoCLI extends SoundMotionDetector {
     public void shutdown() {
         super.shutdown();
         try { jmxShutdown(); } catch (Exception x) {}
+    }
+
+    // ---------------------------------------------------------- friend methods
+
+    /**
+     * This is trick (maybe dirty) to be able to call super.moved() from the JMX
+     * bean.
+     */
+    void play() {
+        super.moved();
     }
 
     // --------------------------------------------------------- private methods
@@ -195,8 +204,8 @@ public class FalcoCLI extends SoundMotionDetector {
     // ---------------------------------------------------------- TrafficControl
 
     public static interface TrafficControlMBean {
-
         public void move();
+        public void play();
     };
 
     public static class TrafficControl implements TrafficControlMBean {
@@ -207,8 +216,14 @@ public class FalcoCLI extends SoundMotionDetector {
             this.falco = falco;
         }
 
+        @Override
         public void move() {
             falco.moved();
+        }
+
+        @Override
+        public void play() {
+            falco.play();
         }
 
     };

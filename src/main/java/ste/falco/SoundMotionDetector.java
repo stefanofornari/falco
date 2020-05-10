@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 import javax.sound.sampled.Mixer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +61,7 @@ public class SoundMotionDetector extends MotionDetector {
     public void startup() throws Exception {
         super.startup();
         clip = SoundUtils.getClip(mixer);
+        clip.addLineListener(new LoggingClipListener());
         clip.open(
             AudioSystem.getAudioInputStream(
                 new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
@@ -75,10 +78,24 @@ public class SoundMotionDetector extends MotionDetector {
     @Override
     public void moved() {
         super.moved(); // it checks everything is ready
-        if (LOG.isLoggable(Level.FINEST)) {
-            LOG.finest("playing " + sound);
-        }
         clip.setFramePosition(0);
         clip.start();
     };
+
+    // ------------------------------------------------------ LoggingClipListern
+
+    private class LoggingClipListener implements LineListener {
+
+        @Override
+        public void update(LineEvent e) {
+            if (LOG.isLoggable(Level.FINEST)) {
+                if (e.getType() == LineEvent.Type.START) {
+                    LOG.finest("playing " + sound);
+                } else {
+                    LOG.finest(String.valueOf(e));
+                }
+            }
+        }
+
+    }
 }

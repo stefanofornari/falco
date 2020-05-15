@@ -1,3 +1,4 @@
+java sound configuration
 # falco
 Raspberry PI based pigeons dissuader
 
@@ -62,7 +63,20 @@ Run:
 Note that resource is relative to /sounds.
 
 JMX configuration
-To enable JMX for remote management uncomment the relevant properties in bin/falco
+To enable JMX for remote management and troubleshooting, uncomment the relevant
+properties in bin/falco.
+
+Note that to make it working java.rmi.server.hostname must be set to the
+hostname the device is reached by the rest of the network. For instance, in a
+home network, the name is usually something like mypi.local where mypi is the
+name provided during Pi set-up.
+
+To change the hostname, use the command
+
+sudo raspi-config
+
+Choose Network options/Hostname and set the wanted name.
+
 
 TODO
 ----

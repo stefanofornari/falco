@@ -64,14 +64,22 @@ public class FalcoCLI extends SoundMotionDetector {
         }
 
         System.out.println("-- started");
-        try (FalcoCLI moctor = new FalcoCLI()) {
-            LOG.info("falco started");
+        while (true) {
+            try (FalcoCLI moctor = new FalcoCLI()) {
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info("falco started");
+                }
 
-            while (true) {
-                Thread.sleep(200);
+                while (moctor.isLive()) {
+                    Thread.sleep(250);
+                }
+
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info("falco recycled");
+                }
+            } catch (Exception x) {
+                LOG.throwing(FalcoCLI.class.getName(), "main", x);
             }
-        } catch (Exception x) {
-            LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
     }
 
@@ -206,6 +214,7 @@ public class FalcoCLI extends SoundMotionDetector {
     public static interface TrafficControlMBean {
         public void move();
         public void play();
+        public void reinit();
     };
 
     public static class TrafficControl implements TrafficControlMBean {
@@ -224,6 +233,11 @@ public class FalcoCLI extends SoundMotionDetector {
         @Override
         public void play() {
             falco.play();
+        }
+
+        @Override
+        public void reinit() {
+            falco.shutdown();
         }
 
     };

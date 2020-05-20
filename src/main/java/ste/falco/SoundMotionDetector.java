@@ -65,7 +65,8 @@ public class SoundMotionDetector extends MotionDetector {
         clip.open(
             AudioSystem.getAudioInputStream(
                 new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
-            ));
+            )
+        );
     }
 
     @Override

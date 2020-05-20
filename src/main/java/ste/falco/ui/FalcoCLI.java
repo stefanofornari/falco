@@ -17,20 +17,10 @@ package ste.falco.ui;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
@@ -54,7 +44,6 @@ public class FalcoCLI extends SoundMotionDetector {
     private LocalDateTime lastMoved = LocalDateTime.now(CLOCK).minusHours(24); // just to make sure the first ervent is capture
 
 
-    public static void main(String... args) {
         System.out.println("Welcome to Falco");
 
         if (args.length > 0) {
@@ -64,14 +53,22 @@ public class FalcoCLI extends SoundMotionDetector {
         }
 
         System.out.println("-- started");
-        try (FalcoCLI moctor = new FalcoCLI()) {
-            LOG.info("falco started");
+        while (true) {
+            try (FalcoCLI moctor = new FalcoCLI()) {
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info("falco started");
+                }
 
-            while (true) {
-                Thread.sleep(200);
+                while (moctor.isLive()) {
+                    Thread.sleep(250);
+                }
+
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info("falco recycled");
+                }
+            } catch (Exception x) {
+                LOG.throwing(FalcoCLI.class.getName(), "main", x);
             }
-        } catch (Exception x) {
-            LOG.throwing(FalcoCLI.class.getName(), "main", x);
         }
     }
 
@@ -206,6 +203,7 @@ public class FalcoCLI extends SoundMotionDetector {
     public static interface TrafficControlMBean {
         public void move();
         public void play();
+        public void reinit();
     };
 
     public static class TrafficControl implements TrafficControlMBean {
@@ -224,6 +222,11 @@ public class FalcoCLI extends SoundMotionDetector {
         @Override
         public void play() {
             falco.play();
+        }
+
+        @Override
+        public void reinit() {
+            falco.shutdown();
         }
 
     };

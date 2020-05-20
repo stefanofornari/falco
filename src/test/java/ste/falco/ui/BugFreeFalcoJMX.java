@@ -92,6 +92,32 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
         then(h.getMessages(Level.FINEST)).contains("playing /sounds/red-tailed-hawk-sound.wav");
     }
 
+    @Test
+    public void reinit() throws Exception {
+        Logger LOG = Logger.getLogger("ste.falco");
+        ListLogHandler h = new ListLogHandler();
+        LOG.addHandler(h);
+
+        runMainClass();
+
+        MBeanServer jmx = waitForTrafficControl();
+        jmx.invoke(
+            new ObjectName(TRAFFIC_CONTROL_NAME),
+            "reinit", null, null
+        );
+
+        new WaitFor(1000, new Condition() {
+            @Override
+            public boolean check() {
+                return (h.getMessages().size() >= 3);
+            }
+
+        });
+        then(h.getMessages()).containsExactly(
+            "falco started", "falco recycled", "falco started"
+        );
+    }
+
     // --------------------------------------------------------- private methods
 
     private void runMainClass() {

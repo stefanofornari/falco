@@ -38,6 +38,10 @@ import ste.xtest.time.FixedClock;
  *
  */
 public class BugFreeFalcoCLI extends BugFreeCLIBase {
+
+    private static final LocalTime MORNING = LocalTime.of(8, 0);
+    private static final LocalTime NIGHT = LocalTime.of(20, 0);
+
     @Test
     public void help() throws Exception {
         //
@@ -89,11 +93,24 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
         Thread.sleep(500); // let's give the service the time to start and stay up
 
-        PIR.up(); Thread.sleep(50); PIR.down();
-        then(h.getMessages()).containsExactly("falco started", "motion detected");
+        //
+        // caveat: if the test runs outside the daylight window, we have one more log message
+        //
+        final LocalTime now = LocalTime.now();
 
         PIR.up(); Thread.sleep(50); PIR.down();
-        then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected", "too early or not in day light - I am muted");
+        if (now.isAfter(MORNING) && now.isBefore(NIGHT)) {
+            then(h.getMessages()).containsExactly("falco started", "motion detected");
+        } else {
+            then(h.getMessages()).containsExactly("falco started", "motion detected", "too early or not in day light - I am muted");
+        }
+
+        PIR.up(); Thread.sleep(50); PIR.down();
+        if (now.isAfter(MORNING) && now.isBefore(NIGHT)) {
+            then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected", "too early or not in day light - I am muted");
+        } else {
+            then(h.getMessages()).containsExactly("falco started", "motion detected", "too early or not in day light - I am muted", "motion detected", "too early or not in day light - I am muted");
+        }
 
         LOG.removeHandler(h);
     }

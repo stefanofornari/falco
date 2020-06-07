@@ -151,13 +151,13 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
             new WaitFor(5000, new Condition() {
                 @Override
                 public boolean check() {
-                    return (rec.events.size() == 2);
+                    return (rec.events.size() >= 2);
                 }
             });
 
             clock.millis += 5*60*1000;  // 5 minutes later
             cli.moved();  Thread.sleep(50); // second time in a row: don't play
-            then(rec.events).hasSize(2);
+            then(rec.events).hasSize(4);
 
             clock.millis += 6*60*1000;  // 11 minutes later
             cli.moved();  // third time: play
@@ -165,7 +165,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
             new WaitFor(5000, new Condition() {
                 @Override
                 public boolean check() {
-                    return (rec.events.size() == 4);
+                    return (rec.events.size() >= 4);
                 }
             });
 
@@ -216,7 +216,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
                 new WaitFor(5000, new Condition() {
                     @Override
                     public boolean check() {
-                        return (rec.events.size() == 2);
+                        return (rec.events.size() >= 2);
                     }
                 });
             }

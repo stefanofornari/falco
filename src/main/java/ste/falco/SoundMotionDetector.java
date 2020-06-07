@@ -49,7 +49,7 @@ public class SoundMotionDetector extends MotionDetector {
             IOUtils.resourceToURL(sound);
         } catch (IOException x) {
             throw new IllegalArgumentException(
-                String.format("'%s' does not exist in classpath", sound)
+                String.format("'%s' not found in classpath", sound)
             );
         }
         this.sound = sound;
@@ -61,7 +61,7 @@ public class SoundMotionDetector extends MotionDetector {
     public void startup() throws Exception {
         super.startup();
         clip = SoundUtils.getClip(mixer);
-        clip.addLineListener(new LoggingClipListener());
+        clip.addLineListener(new MotionClipListener());
         clip.open(
             AudioSystem.getAudioInputStream(
                 new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
@@ -85,7 +85,7 @@ public class SoundMotionDetector extends MotionDetector {
 
     // ------------------------------------------------------ LoggingClipListern
 
-    private class LoggingClipListener implements LineListener {
+    private class MotionClipListener implements LineListener {
 
         @Override
         public void update(LineEvent e) {
@@ -94,6 +94,21 @@ public class SoundMotionDetector extends MotionDetector {
                     LOG.finest("playing " + sound);
                 } else {
                     LOG.finest(String.valueOf(e));
+                }
+            }
+
+            if (e.getType() == LineEvent.Type.STOP) {
+                clip.close();
+                try {
+                    clip.open(
+                        AudioSystem.getAudioInputStream(
+                            new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
+                        )
+                    );
+                } catch (Exception x) {
+                    if (LOG.isLoggable(Level.SEVERE)) {
+                        LOG.throwing(MotionClipListener.class.getName(), "playing sound", x);
+                    }
                 }
             }
         }

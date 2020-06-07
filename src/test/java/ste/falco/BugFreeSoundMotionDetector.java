@@ -40,16 +40,16 @@ import ste.xtest.reflect.PrivateAccess;
 
 /**
  *
- * 
+ *
  */
 
 public class BugFreeSoundMotionDetector extends BugFreePIRBase {
-    
+
     @Test
     public void resource_in_constructor() {
         SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav");
         then(smd.sound).isEqualTo("/sounds/test1.wav");
-        
+
         for (String BLANK: BLANKS) {
             try {
                 smd = new SoundMotionDetector(BLANK);
@@ -58,30 +58,46 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
                 then(x).hasMessage("sound can not be blank or null");
             }
         }
-        
+
         for(String RES: new String[] {"does/not/exist.wav", "noteither.wav"}) {
             try {
                 smd = new SoundMotionDetector(RES);
                 fail("missing valid resource check");
             } catch (IllegalArgumentException x) {
-                then(x).hasMessage("'" + RES + "' does not exist in classpath");
+                then(x).hasMessage("'" + RES + "' not found in classpath");
             }
         }
     }
-    
+
     @Test
     public void is_a_MotionDetector() {
         SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav");
         then(smd).isInstanceOf(MotionDetector.class);
     }
-    
+
+    /**
+     * Here we want to play the sound when moed is invoked. Ideally, we would
+     * load the sound only once, and then we would play it forever rewinding
+     * the stream with setPosition(0). However it seems there is a problem
+     * here as reported in https://github.com/stefanofornari/falco/issues/6:
+     *
+     * After some hours the sound stops playing. The detection and playing logic
+     * is ok, the problem seems in java sound:
+     * - playing with JMX does not play either
+     * - playing with PlaySound plays
+     *
+     * For this reason we then open the clip at startup and then we close and
+     * reopen it at every play.
+     * 
+     * @throws Exception
+     */
     @Test
     public void moved_plays_the_sound() throws Exception {
         ClipEventsRecorder rec = new ClipEventsRecorder();
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
-            
+
             smd.startup();
-        
+
             Clip clip = (Clip)PrivateAccess.getInstanceValue(smd, "clip");
             clip.addLineListener(rec);
 
@@ -90,25 +106,16 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             Condition c = new Condition() {
                 @Override
                 public boolean check() {
-                    return (rec.events.size() == 2);
+                    return (rec.events.size() >= 2);
                 }
 
             };
 
             new WaitFor(2500, c);
-            then(rec.events).containsExactly("Start", "Stop");
-
-            //
-            // we want to be able to play again without reinitializing everything
-            //
-            rec.events.clear();
-            smd.moved();
-
-            new WaitFor(2500, c);
-            then(rec.events).containsExactly("Start", "Stop");
+            then(rec.events).containsExactly("Start", "Stop", "Close", "Open");
         }
     }
-    
+
     @Test
     public void handle_unsupported_formats() throws Exception {
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test2.invalid")) {
@@ -118,12 +125,12 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(x).hasMessage("Stream of unsupported format");
         }
     }
-    
+
     @Test
     public void handle_LineUnavailableException_in_getting_clip() throws Exception {
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
             PrivateAccess.setInstanceValue(
-                smd, "mixer", 
+                smd, "mixer",
                 getMixerWithErrorInGetLine((Mixer)PrivateAccess.getInstanceValue(smd, "mixer"))
             );
             smd.startup();
@@ -132,12 +139,12 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(x).hasMessage("line unavailable in getLine");
         }
     }
-    
+
     @Test
     public void handle_LineUnavailableException_in_opening_clip() throws Exception {
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
             PrivateAccess.setInstanceValue(
-                smd, "mixer", 
+                smd, "mixer",
                 getMixerWithErrorInOpen(
                     (Mixer)PrivateAccess.getInstanceValue(smd, "mixer"),
                     new LineUnavailableException("line unavailable in open")
@@ -149,13 +156,13 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(x).hasMessage("line unavailable in open");
         }
     }
-    
-        
+
+
     @Test
     public void handle_IOException_in_opening_clip() throws Exception {
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
             PrivateAccess.setInstanceValue(
-                smd, "mixer", 
+                smd, "mixer",
                 getMixerWithErrorInOpen(
                     (Mixer)PrivateAccess.getInstanceValue(smd, "mixer"),
                     new IOException("IO error in open")
@@ -167,7 +174,7 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(x).hasMessage("IO error in open");
         }
     }
-    
+
     @Test
     public void startup_calls_super() throws Exception {
         GpioController gpio = GpioFactory.getInstance();
@@ -177,7 +184,7 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(gpio.getProvisionedPin(RaspiPin.GPIO_04)).isNotNull();
         }
     }
-    
+
     @Test
     public void error_if_moved_is_called_before_startup() {
         try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
@@ -187,9 +194,9 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             then(x).hasMessage("moved() called before the instance is started up; make sure to call startup()");
         }
     }
-    
+
     // --------------------------------------------------------- private methods
-    
+
     private Mixer getMixerWithErrorInGetLine(Mixer mixer) throws Exception {
         InvocationHandler handler = new InvocationHandler() {
             @Override
@@ -207,7 +214,7 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
                                handler
         );
     }
-    
+
     private Mixer getMixerWithErrorInOpen(Mixer mixer, Throwable t) throws Exception {
         InvocationHandler handler = new InvocationHandler() {
             @Override
@@ -218,16 +225,16 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
                 return m.invoke(mixer, args);
             }
         };
-        
+
         return (Mixer) Proxy.newProxyInstance(
                                Mixer.class.getClassLoader(),
                                new Class<?>[] { Mixer.class },
                                handler
         );
     }
-                
+
     private Clip getClipWithErrorInOpen(Clip clip, Throwable t) throws Exception {
-        
+
         InvocationHandler handler = new InvocationHandler() {
             @Override
             public Object invoke(Object o, Method m, Object[] args) throws Throwable {
@@ -237,19 +244,19 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
                 return m.invoke(clip, args);
             }
         };
-        
+
         return (Clip) Proxy.newProxyInstance(Clip.class.getClassLoader(),
                                           new Class<?>[] { Clip.class },
                                           handler);
     }
-    
+
     // ------------------------------------------------------ ClipEventsRecorder
-    
+
     //
     // TODO: move to xtest
     //
     public static class ClipEventsRecorder implements LineListener {
-        
+
         public final List<String> events = new ArrayList<>();
 
         @Override
@@ -257,5 +264,5 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
            events.add(String.valueOf(e.getType()));
         }
     }
-    
+
 }

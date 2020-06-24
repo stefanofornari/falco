@@ -214,6 +214,8 @@ public class FalcoCLI extends SoundMotionDetector {
         public void move();
         public void play();
         public void reinit();
+        public void setVolume(double volume);
+        public void getVolume();
     };
 
     public static class TrafficControl implements TrafficControlMBean {
@@ -237,6 +239,16 @@ public class FalcoCLI extends SoundMotionDetector {
         @Override
         public void reinit() {
             falco.shutdown();
+        }
+
+        @Override
+        public void setVolume(double volume) {
+            falco.setVolume(volume);
+        }
+
+        @Override
+        public void getVolume() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
     };

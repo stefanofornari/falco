@@ -244,9 +244,45 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
                 then(rec.events).isEmpty();
             }
+        }
+    }
 
+    /**
+     * Volume is a value between 0.0 and 2.0 with the following meaning:
+     *
+     * 0.5 - no sound
+     * 0.5 - half the volume of the clip
+     * 1.0 - the natural volume of the clip
+     * 2.0 - double the volume of the clip
+     *
+     * @throws Exception
+     */
+    @Test
+    public void get_and_setset_and_get_volume_ok() throws Exception {
+        try (FalcoCLI falco = new FalcoCLI()) {
+            falco.setVolume(0);
+            then(falco.getVolume()).isZero();
 
+            falco.setVolume(0.75d);
+            then(falco.getVolume()).isEqualTo(0.75);
 
+            falco.setVolume(2.0d);
+            then(falco.getVolume()).isEqualTo(2.0d);
+        }
+    }
+
+    @Test
+    public void get_and_setset_and_get_volume_out_of_range() throws Exception {
+        try (FalcoCLI falco = new FalcoCLI()) {
+            falco.setVolume(-0.4);
+        } catch (IllegalArgumentException x) {
+            then(x).hasMessage("invalid volume -0.4 - it must in range (0.0, 2.0)");
+        }
+
+        try (FalcoCLI falco = new FalcoCLI()) {
+            falco.setVolume(2.1);
+        } catch (IllegalArgumentException x) {
+            then(x).hasMessage("invalid volume 2.1 - it must in range (0.0, 2.0)");
         }
     }
 

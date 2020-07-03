@@ -42,11 +42,12 @@ fi
 #
 load_config $scriptname
 
-if [ "$1" = "--help" ]
-then
-  $uidcmd $javacmd $JAVA_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@"
-  exit
-fi
-
 #echo $uidcmd $javacmd $JAVA_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@"
 nohup $uidcmd $javacmd $JAVA_OPTS "$LOG_OPTS" ste.falco.ui.FalcoCLI "$@" > "$home/logs/output.log"
+
+#
+# Since the output goes in a log file, let's show a piece of it once the process
+# is done. This shows in the console for example if the program exited
+# unexpectedly with an error. It is also useful to show the syntax
+#
+head -n 100 "$home/logs/output.log"

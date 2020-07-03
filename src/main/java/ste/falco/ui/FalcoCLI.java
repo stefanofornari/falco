@@ -36,16 +36,19 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.apache.commons.io.IOUtils;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
 import ste.falco.SoundMotionDetector;
 import ste.falco.SoundUtils;
-
 
 /**
  *
  */
 public class FalcoCLI extends SoundMotionDetector {
 
-    private static final int DEFAULT_HEARTBEAT_PERIOD = 5*60*1000; // 5 minutes in milliseconds
+    private static final int DEFAULT_HEARTBEAT_PERIOD = 5 * 60 * 1000; // 5 minutes in milliseconds
     private static Logger LOG = Logger.getLogger("ste.falco");
 
     private final Clock CLOCK = Clock.systemDefaultZone();
@@ -56,9 +59,21 @@ public class FalcoCLI extends SoundMotionDetector {
     public static void main(String... args) {
         System.out.println("Welcome to Falco");
 
-        if (args.length > 0) {
-            System.out.println("usage:");
-            System.out.println("ste.falco.FalcoCLI [--help]");
+        FalcoCLI.FalcoOptions options = new FalcoCLI.FalcoOptions();
+        CommandLine cli = new CommandLine(options);
+        cli.execute(args);
+        try {
+            cli.parseArgs(args);
+        } catch (ParameterException x) {
+            //
+            // picocli shows already the error message and the usage.
+            //
+            System.out.println(x.getMessage());
+            cli.usage(System.out);
+            return;
+        }
+
+        if (cli.isUsageHelpRequested()) {
             return;
         }
 
@@ -94,7 +109,7 @@ public class FalcoCLI extends SoundMotionDetector {
      *
      * @throws Exception same as startup()
      */
-    protected FalcoCLI(Heartbeat heartbeatTask) throws Exception  {
+    protected FalcoCLI(Heartbeat heartbeatTask) throws Exception {
         super("/sounds/red-tailed-hawk-sound.wav");
         this.heartbeatTask = heartbeatTask;
         startup();
@@ -129,11 +144,13 @@ public class FalcoCLI extends SoundMotionDetector {
     @Override
     public void shutdown() {
         super.shutdown();
-        try { jmxShutdown(); } catch (Exception x) {}
+        try {
+            jmxShutdown();
+        } catch (Exception x) {
+        }
     }
 
     // ---------------------------------------------------------- friend methods
-
     /**
      * This is trick (maybe dirty) to be able to call super.moved() from the JMX
      * bean.
@@ -143,7 +160,6 @@ public class FalcoCLI extends SoundMotionDetector {
     }
 
     // --------------------------------------------------------- private methods
-
     private boolean shallPlay() {
         LocalDateTime now = LocalDateTime.now(CLOCK);
         int hour = now.getHour();
@@ -156,28 +172,26 @@ public class FalcoCLI extends SoundMotionDetector {
     }
 
     private void jmxSetup()
-        throws MalformedObjectNameException, InstanceAlreadyExistsException,
-               MBeanRegistrationException, NotCompliantMBeanException {
+            throws MalformedObjectNameException, InstanceAlreadyExistsException,
+            MBeanRegistrationException, NotCompliantMBeanException {
         ManagementFactory
-            .getPlatformMBeanServer()
-            .registerMBean(
-                new TrafficControl(this),
-                new ObjectName("ste.falco.jmx:name=TrafficControl")
-            );
+                .getPlatformMBeanServer()
+                .registerMBean(
+                        new TrafficControl(this),
+                        new ObjectName("ste.falco.jmx:name=TrafficControl")
+                );
     }
+
     private void jmxShutdown()
-        throws MalformedObjectNameException, InstanceNotFoundException, MBeanRegistrationException  {
+            throws MalformedObjectNameException, InstanceNotFoundException, MBeanRegistrationException {
         ManagementFactory
-            .getPlatformMBeanServer()
-            .unregisterMBean(
-                new ObjectName("ste.falco.jmx:name=TrafficControl")
-            );
+                .getPlatformMBeanServer()
+                .unregisterMBean(
+                        new ObjectName("ste.falco.jmx:name=TrafficControl")
+                );
     }
-
-
 
     // ----------------------------------------------------------- HeartbeatTask
-
     protected static class Heartbeat implements Runnable {
 
         public final long period;
@@ -188,13 +202,13 @@ public class FalcoCLI extends SoundMotionDetector {
          * @param period the delay in milliseconds between to beats
          */
         public Heartbeat(long period)
-            throws LineUnavailableException, UnsupportedAudioFileException, IOException {
+                throws LineUnavailableException, UnsupportedAudioFileException, IOException {
             this.period = period;
             clip = SoundUtils.getClip(AudioSystem.getMixer(null));
             clip.open(
-            AudioSystem.getAudioInputStream(
-                new ByteArrayInputStream(IOUtils.resourceToByteArray("/sounds/heartbeat.wav"))
-            ));
+                    AudioSystem.getAudioInputStream(
+                            new ByteArrayInputStream(IOUtils.resourceToByteArray("/sounds/heartbeat.wav"))
+                    ));
         }
 
         @Override
@@ -208,13 +222,32 @@ public class FalcoCLI extends SoundMotionDetector {
         }
     }
 
-    // ---------------------------------------------------------- TrafficControl
+    // ------------------------------------------------------------ FalcoOptions
+    @Command(
+            name = "ste.falco.FalcoCLI",
+            description = "A pigeon dissuader that plays the sound of a red tailed hawk"
+    )
+    protected static class FalcoOptions {
 
+        @Option(
+                names = {"--help", "-h"},
+                description = "This help message",
+                usageHelp = true
+        )
+        public boolean helpRequested;
+    }
+
+    // ---------------------------------------------------------- TrafficControl
     public static interface TrafficControlMBean {
+
         public void move();
+
         public void play();
+
         public void reinit();
+
         public void setVolume(double volume);
+
         public void getVolume();
     };
 

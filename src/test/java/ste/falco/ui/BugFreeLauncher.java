@@ -36,11 +36,10 @@ public class BugFreeLauncher {
 
     @Test
     public void launcher_from_home_with_nohup() throws Exception {
-        String[] ret = launch();  // the process will end because of missing
-                                   // pi4j libraries, therefore it exits
-                                   // immediately
+        String[] ret = launch(); // the process will end because of missing
+                                 // pi4j libraries, therefore it exits
+                                 // immediately
 
-        then(ret[1]).isEmpty();
         thenOutputContains(new File(ret[0], "logs/output.log"), "Welcome to Falco\n-- started");
     }
 
@@ -50,15 +49,25 @@ public class BugFreeLauncher {
                                       // pi4j libraries, // therefore it exits
                                       // immediately
 
-        then(ret[1]).isEmpty();
         thenOutputContains(new File(ret[0], "logs/output.log"), "Welcome to Falco\n-- started");
     }
 
     @Test
     public void launcher_with_help() throws Exception {
         String[] ret = launch("--help"); // the process will end because of --help
+        then(ret[1]).contains("Usage:").doesNotContain("-- started");
 
-        then(ret[1]).contains("usage:").doesNotContain("-- started");
+        ret = launch("-h"); // the process will end because of -h
+        then(ret[1]).contains("Usage:").doesNotContain("-- started");
+    }
+
+    @Test
+    public void launcher_with_unkown_parameter() throws Exception {
+        String[] ret = launch("--invalidoption");
+        then(ret[1])
+            .contains("Unknown option: '--invalidoption'")
+            .contains("Usage:")
+            .doesNotContain("-- started");
     }
 
     // --------------------------------------------------------- private methods

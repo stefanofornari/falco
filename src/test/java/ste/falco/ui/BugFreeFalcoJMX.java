@@ -89,6 +89,7 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
             }
 
         });
+        System.out.println(h.getMessages());
         then(h.getMessages(Level.FINEST)).contains("playing /sounds/red-tailed-hawk-sound.wav");
     }
 

@@ -58,7 +58,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
         then(f.isDone()).isTrue();
         then(STDOUT.getLog()).contains("Welcome to Falco")
-                             .contains("usage:")
+                             .contains("Usage:")
                              .contains("ste.falco.FalcoCLI");
     }
 
@@ -75,7 +75,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
         then(f.isDone()).isFalse();
         then(STDOUT.getLog()).contains("Welcome to Falco\n-- started")
-                             .doesNotContain("usage:");
+                             .doesNotContain("Usage:");
     }
 
     @Test

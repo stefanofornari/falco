@@ -127,7 +127,7 @@ public class BugFreeMotionDetector extends BugFreePIRBase {
 
     @Test
     public void error_if_moved_is_called_before_startup() {
-        try (MotionDetector smd = new MotionDetector() {}) {
+        try (MotionDetector smd = new MotionDetector("/sounds/test1.wav") {}) {
             smd.moved();
             fail("moved when not ready");
         } catch (IllegalStateException x) {
@@ -137,7 +137,7 @@ public class BugFreeMotionDetector extends BugFreePIRBase {
 
     @Test
     public void moved_ok() throws Exception {
-        try (MotionDetector smd = new MotionDetector() {}) {
+        try (MotionDetector smd = new MotionDetector("/sounds/test1.wav") {}) {
             smd.startup();
             smd.moved();
         }
@@ -149,7 +149,7 @@ public class BugFreeMotionDetector extends BugFreePIRBase {
         // NOTE: after the instance is reset, it must be started up again before
         // using it.
         //
-        try (MotionDetector smd = new MotionDetector() {}) {
+        try (MotionDetector smd = new MotionDetector("/sounds/test1.wav") {}) {
             smd.startup(); smd.moved(); smd.shutdown();
             smd.moved();
         } catch (IllegalStateException x) {
@@ -159,17 +159,39 @@ public class BugFreeMotionDetector extends BugFreePIRBase {
 
     @Test
     public void isLive_when_started_up_not_otherwise() throws Exception {
-        try (MotionDetector smd = new MotionDetector() {}) {
+        try (MotionDetector smd = new MotionDetector("/sounds/test1.wav") {}) {
             then(smd.isLive()).isFalse();
             smd.startup(); then(smd.isLive()).isTrue();
             smd.shutdown(); then(smd.isLive()).isFalse();
         }
     }
 
+    @Test
+    public void startup_calls_super() throws Exception {
+        GpioController gpio = GpioFactory.getInstance();
+        try (MotionDetector smd = new MotionDetector("/sounds/test1.wav")) {
+            smd.startup();
+
+            then(gpio.getProvisionedPin(RaspiPin.GPIO_04)).isNotNull();
+            then(smd.clip).isNotNull();
+        }
+    }
+
+    @Test
+    public void is_a_SoundMotionDetector() {
+        MotionDetector smd = new MotionDetector("/sounds/test1.wav");
+        then(smd).isInstanceOf(SoundMotionDetector.class);
+    }
+
+
     // ----------------------------------------------------- InnerMotionDetector
 
     private class InnerMotionDetector extends MotionDetector {
         public int count = 0;
+
+        public InnerMotionDetector() {
+            super("/sounds/test1.wav");
+        }
 
         @Override
         public void moved() {

@@ -18,8 +18,6 @@ package ste.falco.ui;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,30 +38,30 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
+import ste.falco.MotionDetector;
 import ste.falco.SoundMotionDetector;
 import ste.falco.SoundUtils;
 
 /**
  *
  */
-public class FalcoCLI extends SoundMotionDetector {
+public class FalcoCLI implements AutoCloseable {
 
     private static final int DEFAULT_HEARTBEAT_PERIOD = 5 * 60 * 1000; // 5 minutes in milliseconds
     private static Logger LOG = Logger.getLogger("ste.falco");
 
-    private final Clock CLOCK = Clock.systemDefaultZone();
-
     private Heartbeat heartbeatTask;
-    private LocalDateTime lastMoved = LocalDateTime.now(CLOCK).minusHours(24); // just to make sure the first ervent is capture
+
+    public        final SoundMotionDetector moctor;
+    public static final FalcoOptions DEFAULTS = new FalcoOptions();
 
     public static void main(String... args) {
         System.out.println("Welcome to Falco");
 
         FalcoCLI.FalcoOptions options = new FalcoCLI.FalcoOptions();
         CommandLine cli = new CommandLine(options);
-        cli.execute(args);
         try {
-            cli.parseArgs(args);
+            cli.execute(args);
         } catch (ParameterException x) {
             //
             // picocli shows already the error message and the usage.
@@ -79,12 +77,14 @@ public class FalcoCLI extends SoundMotionDetector {
 
         System.out.println("-- started");
         while (true) {
-            try (FalcoCLI moctor = new FalcoCLI()) {
+            try (FalcoCLI falco = new FalcoCLI(options)) {
+                falco.startup();
+
                 if (LOG.isLoggable(Level.INFO)) {
                     LOG.info("falco started");
                 }
 
-                while (moctor.isLive()) {
+                while (falco.moctor.isLive()) {
                     Thread.sleep(250);
                 }
 
@@ -97,10 +97,13 @@ public class FalcoCLI extends SoundMotionDetector {
         }
     }
 
-    public FalcoCLI() throws Exception {
-        super("/sounds/red-tailed-hawk-sound.wav");
-        this.heartbeatTask = new Heartbeat(DEFAULT_HEARTBEAT_PERIOD);
-        startup();
+    /**
+     * Creates a new instance with default options (as per FalcoCLI.DEFAULS)
+     *
+     * @throws Exception in case of errors
+     */
+    public FalcoCLI() {
+        this(DEFAULTS);
     }
 
     /**
@@ -109,44 +112,45 @@ public class FalcoCLI extends SoundMotionDetector {
      *
      * @throws Exception same as startup()
      */
-    protected FalcoCLI(Heartbeat heartbeatTask) throws Exception {
-        super("/sounds/red-tailed-hawk-sound.wav");
-        this.heartbeatTask = heartbeatTask;
-        startup();
-    }
+    public FalcoCLI(FalcoCLI.FalcoOptions options) {
+        moctor = new MotionDetector("/sounds/red-tailed-hawk-sound.wav");
+        heartbeatTask = null;
 
-    @Override
-    public void moved() {
-        if (LOG.isLoggable(Level.INFO)) {
-            LOG.info("motion detected");
-        }
-        if (shallPlay()) {
-            lastMoved = LocalDateTime.now(CLOCK);
-            play();
+        if (!options.noHeartbeat) {
+            try {
+                heartbeatTask = new Heartbeat(DEFAULT_HEARTBEAT_PERIOD);
+            } catch (Exception x) {
+                //
+                // The heartbeat won't start...
+            }
         } else {
             if (LOG.isLoggable(Level.INFO)) {
-                LOG.info("too early or not in day light - I am muted");
+                LOG.info("Heartbeat disabled");
             }
         }
     }
 
-    @Override
     public void startup() throws Exception {
-        super.startup();
-
         jmxSetup();
+
+        moctor.startup();
 
         ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
-        ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
+        if (heartbeatTask != null) {
+            ses.scheduleAtFixedRate(heartbeatTask, 0, heartbeatTask.period, TimeUnit.MILLISECONDS);
+        }
     }
 
-    @Override
     public void shutdown() {
-        super.shutdown();
         try {
+            //
+            // TODO: to fix based on the type...
+            //
+            ((MotionDetector)moctor).shutdown();
             jmxShutdown();
         } catch (Exception x) {
+            x.printStackTrace();
         }
     }
 
@@ -156,21 +160,10 @@ public class FalcoCLI extends SoundMotionDetector {
      * bean.
      */
     void play() {
-        super.moved();
+        moctor.moved();
     }
 
     // --------------------------------------------------------- private methods
-    private boolean shallPlay() {
-        LocalDateTime now = LocalDateTime.now(CLOCK);
-        int hour = now.getHour();
-
-        if ((hour < 20) && (hour > 7)) {
-            return now.minusMinutes(10).isAfter(lastMoved);
-        }
-
-        return false;
-    }
-
     private void jmxSetup()
             throws MalformedObjectNameException, InstanceAlreadyExistsException,
             MBeanRegistrationException, NotCompliantMBeanException {
@@ -189,6 +182,11 @@ public class FalcoCLI extends SoundMotionDetector {
                 .unregisterMBean(
                         new ObjectName("ste.falco.jmx:name=TrafficControl")
                 );
+    }
+
+    @Override
+    public void close() throws Exception {
+        shutdown();
     }
 
     // ----------------------------------------------------------- HeartbeatTask
@@ -235,9 +233,22 @@ public class FalcoCLI extends SoundMotionDetector {
                 usageHelp = true
         )
         public boolean helpRequested;
+
+        @Option(
+                names = {"--noheartbeat"},
+                description = "Do not play the heartbeat"
+        )
+        public boolean noHeartbeat = false;
+
+        @Option(
+                names = {"--nogpio"},
+                description = "Do not use GPIO"
+        )
+        public boolean noGPIO = false;
     }
 
     // ---------------------------------------------------------- TrafficControl
+
     public static interface TrafficControlMBean {
 
         public void move();
@@ -261,7 +272,7 @@ public class FalcoCLI extends SoundMotionDetector {
 
         @Override
         public void move() {
-            falco.moved();
+            falco.moctor.moved();
         }
 
         @Override
@@ -276,7 +287,7 @@ public class FalcoCLI extends SoundMotionDetector {
 
         @Override
         public void setVolume(double volume) {
-            falco.setVolume(volume);
+            falco.moctor.setVolume(volume);
         }
 
         @Override

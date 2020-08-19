@@ -66,10 +66,10 @@ public class BugFreeTraffifControlMBean extends BugFreeCLIBase {
         TrafficControlMBean bean = new TrafficControl(stub);
 
         bean.setVolume(0);
-        then(stub.EVENTS).containsExactly("setVolume(00.00)"); stub.EVENTS.clear();
+        then(stub.moctor.getVolume()).isEqualTo(0.0);
 
         bean.setVolume(1.0);
-        then(stub.EVENTS).containsExactly("setVolume(01.00)"); stub.EVENTS.clear();
+        then(stub.moctor.getVolume()).isEqualTo(1.0);
     }
 
     // --------------------------------------------------------- private methods
@@ -81,6 +81,7 @@ public class BugFreeTraffifControlMBean extends BugFreeCLIBase {
         public final List<String> EVENTS;
 
         private FalcoCLIStub() throws Exception {
+            super();
             this.EVENTS = new ArrayList<>();
         }
 
@@ -97,11 +98,6 @@ public class BugFreeTraffifControlMBean extends BugFreeCLIBase {
         @Override
         public void shutdown() {
             EVENTS.add("stopped");
-        }
-
-        @Override
-        public void setVolume(double volume) {
-            EVENTS.add(String.format("setVolume(%05.2f)", volume));
         }
     }
 

@@ -15,9 +15,10 @@
  */
 package ste.falco;
 
-import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.sampled.AudioSystem;
@@ -34,16 +35,19 @@ import org.apache.commons.lang3.StringUtils;
 /**
  *
  */
-public class SoundMotionDetector extends MotionDetector {
+public class SoundMotionDetector implements AutoCloseable {
 
     public final String sound;
 
-    private Mixer mixer;
-    private Clip clip;
+    protected Mixer mixer;
+    protected Clip clip;
 
     protected final Logger LOG = Logger.getLogger("ste.falco");
 
-    public SoundMotionDetector(String sound) {
+    private final Clock CLOCK = Clock.systemDefaultZone();
+    private LocalDateTime lastMoved = LocalDateTime.now(CLOCK).minusHours(24); // just to make sure the first ervent is capture
+
+    public SoundMotionDetector(final String sound) {
         if (StringUtils.isBlank(sound)) {
             throw new IllegalArgumentException("sound can not be blank or null");
         }
@@ -60,9 +64,7 @@ public class SoundMotionDetector extends MotionDetector {
         mixer = AudioSystem.getMixer(null);
     }
 
-    @Override
     public void startup() throws Exception {
-        super.startup();
         clip = SoundUtils.getClip(mixer);
         clip.addLineListener(new MotionClipListener());
         clip.open(
@@ -72,18 +74,33 @@ public class SoundMotionDetector extends MotionDetector {
         );
     }
 
-    @Override
-    public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-        if (event.getState().isHigh()) {
-            moved();
-        }
+    //
+    // TODO: writye bugfreecode
+    //
+    public boolean isLive() {
+        return (clip != null);
     }
 
-    @Override
     public void moved() {
-        super.moved(); // it checks everything is ready
-        clip.setFramePosition(0);
-        clip.start();
+        System.out.println("CHECK2.1");
+        if (clip == null) {
+            throw new IllegalStateException("moved() called before the instance is started up; make sure to call startup()");
+        }
+
+        if (LOG.isLoggable(Level.INFO)) {
+            LOG.info("motion detected");
+        }
+        if (shallPlay()) {
+            lastMoved = LocalDateTime.now(CLOCK);
+            clip.setFramePosition(0);
+            System.out.println("CHECK2.2");
+            clip.start();
+            System.out.println("CHECK2.3");
+        } else {
+            if (LOG.isLoggable(Level.INFO)) {
+                LOG.info("too early or not in day light - I am muted");
+            }
+        }
     }
 
     public void setVolume(double volume) {
@@ -105,6 +122,17 @@ public class SoundMotionDetector extends MotionDetector {
 
     // --------------------------------------------------------- Private methods
 
+    private boolean shallPlay() {
+        LocalDateTime now = LocalDateTime.now(CLOCK);
+        int hour = now.getHour();
+
+        if ((hour < 20) && (hour > 7)) {
+            return now.minusMinutes(10).isAfter(lastMoved);
+        }
+
+        return false;
+    }
+
     private void printControl(Control control, String indent) {
         System.out.printf("%s%s%n", indent, control);
         if (control instanceof CompoundControl) {
@@ -116,34 +144,43 @@ public class SoundMotionDetector extends MotionDetector {
         }
     }
 
+
+    // ----------------------------------------------------------- AutoCloseable
+
+    @Override
+    public void close() {
+        // TODOD: maybe close the clip?
+    }
+
     // ------------------------------------------------------ LoggingClipListern
     private class MotionClipListener implements LineListener {
 
-    @Override
-    public void update(LineEvent e) {
-        if (LOG.isLoggable(Level.FINEST)) {
-            if (e.getType() == LineEvent.Type.START) {
-                LOG.finest("playing " + sound);
-            } else {
-                LOG.finest(String.valueOf(e));
+        @Override
+        public void update(LineEvent e) {
+            System.out.println("CHECK3 " + e);
+            if (LOG.isLoggable(Level.FINEST)) {
+                if (e.getType() == LineEvent.Type.START) {
+                    LOG.finest("playing " + sound);
+                } else {
+                    LOG.finest(String.valueOf(e));
+                }
             }
-        }
 
-        if (e.getType() == LineEvent.Type.STOP) {
-            clip.close();
-            try {
-                clip.open(
-                        AudioSystem.getAudioInputStream(
-                                new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
-                        )
-                );
-            } catch (Exception x) {
-                if (LOG.isLoggable(Level.SEVERE)) {
-                    LOG.throwing(MotionClipListener.class.getName(), "playing sound", x);
+            if (e.getType() == LineEvent.Type.STOP) {
+                clip.close();
+                try {
+                    clip.open(
+                            AudioSystem.getAudioInputStream(
+                                    new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
+                            )
+                    );
+                } catch (Exception x) {
+                    if (LOG.isLoggable(Level.SEVERE)) {
+                        LOG.throwing(MotionClipListener.class.getName(), "playing sound", x);
+                    }
                 }
             }
         }
-    }
 
-}
+    }
 }

@@ -15,9 +15,6 @@
  */
 package ste.falco;
 
-import com.pi4j.io.gpio.GpioController;
-import com.pi4j.io.gpio.GpioFactory;
-import com.pi4j.io.gpio.RaspiPin;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -69,12 +66,6 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
         }
     }
 
-    @Test
-    public void is_a_MotionDetector() {
-        SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav");
-        then(smd).isInstanceOf(MotionDetector.class);
-    }
-
     /**
      * Here we want to play the sound when moed is invoked. Ideally, we would
      * load the sound only once, and then we would play it forever rewinding
@@ -88,7 +79,7 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
      *
      * For this reason we then open the clip at startup and then we close and
      * reopen it at every play.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -172,16 +163,6 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
             fail("no exception");
         } catch (IOException x) {
             then(x).hasMessage("IO error in open");
-        }
-    }
-
-    @Test
-    public void startup_calls_super() throws Exception {
-        GpioController gpio = GpioFactory.getInstance();
-        try (SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav")) {
-            smd.startup();
-
-            then(gpio.getProvisionedPin(RaspiPin.GPIO_04)).isNotNull();
         }
     }
 

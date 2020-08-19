@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
@@ -36,20 +37,14 @@ public class BugFreeLauncher {
 
     @Test
     public void launcher_from_home_with_nohup() throws Exception {
-        String[] ret = launch(); // the process will end because of missing
-                                 // pi4j libraries, therefore it exits
-                                 // immediately
-
-        thenOutputContains(new File(ret[0], "logs/output.log"), "Welcome to Falco\n-- started");
+        String[] ret = launch("--help"); // the process will end because of --help
+        thenFileContainsButNot(new File(ret[0], "logs/output.log"), "Welcome to Falco\nUsage:");
     }
 
     @Test
     public void launcher_from_not_home() throws Exception {
-        String[] ret = launch(false); // the process will end because of missing
-                                      // pi4j libraries, // therefore it exits
-                                      // immediately
-
-        thenOutputContains(new File(ret[0], "logs/output.log"), "Welcome to Falco\n-- started");
+        String[] ret = launch("--help");  // the process will end because of --help
+        thenFileContainsButNot(new File(ret[0], "logs/output.log"), "Welcome to Falco\nUsage:");
     }
 
     @Test
@@ -70,13 +65,29 @@ public class BugFreeLauncher {
             .doesNotContain("-- started");
     }
 
+    @Test
+    public void no_heartbeat() throws Exception {
+        String[] ret = launch(3000, false, false, "--noheartbeat");
+        thenFileContainsButNot(new File(ret[0], "logs/falco.0.log"), "Heartbeat disabled", "heartbeat");
+    }
+
+    @Test
+    public void no_gpio() throws Exception {
+        String[] ret = launch(3000, false, false, "--nogpio");
+        thenFileContainsButNot(new File(ret[0], "logs/falco.0.log"), "falco started", "Unable to load [libpi4j.so]");
+    }
+
     // --------------------------------------------------------- private methods
 
-    private String[] launch(boolean changeHome, String... args) throws Exception {
+    private String[] launch(long timeout, boolean changeHome, boolean readOut, String... args) throws Exception {
         String[] ret = new String[2];
 
         File home = TMPDIR.newFolder(); ret[0] = home.getAbsolutePath();
         FileUtils.copyDirectory(new File("src/main/falco"), home);
+        FileUtils.copyFile(
+            new File("src/test/falco/conf/logging-finest.properties"),
+            new File(home, "conf/logging.properties")
+        );
         File falco = new File(home, "bin/falco");
         falco.setExecutable(true);
 
@@ -97,19 +108,40 @@ public class BugFreeLauncher {
         Map<String, String> env = pb.environment();
         env.put("CLASSPATH", System.getProperty("java.class.path"));
 
-        Process p = pb.start(); p.waitFor();
 
-        ret[1] = new String(p.getInputStream().readAllBytes());
+        Process p = pb.start(); p.waitFor(timeout, TimeUnit.MILLISECONDS);
+        if (readOut) {
+            ret[1] = new String(p.getInputStream().readAllBytes());
+        } else {
+            ret[1] = null;
+        }
+
+        p.destroy(); // just in case the process did not end
 
         return ret;
     }
 
     private String[] launch(String... command) throws Exception {
-        return launch(true, command);
+        return launch(5000, true, true, command);
     }
 
+    private String[] launch(boolean changeHome, String... args) throws Exception {
+        return launch(5000, changeHome, true, args);
 
-    private void thenOutputContains(File out, String text) {
-        then(out).exists().hasContent(text);
+    }
+
+    private void thenFileContainsButNot(File file, String include, String exclude) throws Exception {
+        then(file).exists();
+
+        String content = FileUtils.readFileToString(file, "UTF-8");
+        System.out.println(content);
+        then(content).contains(include);
+        if (exclude != null) {
+            then(content).doesNotContain(exclude);
+        }
+    }
+
+    private void thenFileContainsButNot(File file, String include) throws Exception {
+        thenFileContainsButNot(file, include, null);
     }
 }

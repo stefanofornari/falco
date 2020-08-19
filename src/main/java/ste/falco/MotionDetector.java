@@ -26,12 +26,18 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 /**
  *
  */
-public abstract class MotionDetector
-                implements GpioPinListenerDigital, AutoCloseable {
+public class MotionDetector
+       extends SoundMotionDetector
+       implements GpioPinListenerDigital {
 
     private GpioPinDigitalInput PIN = null;
 
+    public MotionDetector(final String sound) {
+        super(sound);
+    }
+
     public void startup() throws Exception {
+        super.startup();
         PIN = GpioFactory.getInstance()
                          .provisionDigitalInputPin(RaspiPin.GPIO_04, "Motion sensor", PinPullResistance.PULL_DOWN);
         PIN.addListener(this);
@@ -48,10 +54,9 @@ public abstract class MotionDetector
         }
     }
 
-    @Override
     public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
         // display pin state on console
-        //System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
+        System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
         if (event.getState().isHigh()) {
             moved();
         }
@@ -73,20 +78,31 @@ public abstract class MotionDetector
      *
      * @throws IllegalStateException if the instance has not been started up
      */
+    //
+    // TODO: to review with the new hierarchy
+    //
     public void moved() {
+        System.out.println("CHECK1");
         if (PIN == null) {
             throw new IllegalStateException("moved() called before the instance is started up; make sure to call startup()");
         }
+        super.moved();
     }
 
+    //
+    // TODO: write bugfree code to call super...
+    //
+    @Override
     public boolean isLive() {
-        return PIN != null;
+        return super.isLive() && (PIN != null);
     }
 
     // ----------------------------------------------------------- AutoCloseable
 
     @Override
     public void close() {
+        super.close();
         shutdown();
     }
+
 }

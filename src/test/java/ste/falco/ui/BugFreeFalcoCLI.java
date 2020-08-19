@@ -35,7 +35,8 @@ import ste.xtest.reflect.PrivateAccess;
 import ste.xtest.time.FixedClock;
 
 /**
- *
+ * TODO: cli.moctor.move() ddoes not make sense, we need to simulate a move via
+ * a provider
  */
 public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
@@ -84,7 +85,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
         ListLogHandler h = new ListLogHandler();
         LOG.addHandler(h);
 
-        Future f = Executors.newCachedThreadPool().submit(new Runnable() {
+        Executors.newCachedThreadPool().execute(new Runnable() {
             @Override
             public void run() {
                 try { FalcoCLI.main(); } catch (Exception x) {};
@@ -117,19 +118,25 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
     @Test
     public void heartbeat() throws Exception {
-
         try (FalcoCLI cli = new FalcoCLI()) {
+            cli.startup();
             Heartbeat hb = (Heartbeat)PrivateAccess.getInstanceValue(cli, "heartbeatTask");
             then(hb.period).isEqualTo(5*60*1000); // 5 minutes in milliseconds
         }
 
         CounterTask counter = new CounterTask(25);
-        try (FalcoCLI cli = new FalcoCLI(counter)) {
+        try (FalcoCLI cli = new FalcoCLI()) {
+            PrivateAccess.setInstanceValue(cli, "heartbeatTask", counter);
+            cli.startup();
+
             Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(6);
         }
 
         counter = new CounterTask(50);
-        try (FalcoCLI cli = new FalcoCLI(counter)) {
+        try (FalcoCLI cli = new FalcoCLI()) {
+            PrivateAccess.setInstanceValue(cli, "heartbeatTask", counter);
+            cli.startup();
+
             Thread.sleep(100); then(counter.value).isGreaterThan(0).isLessThan(4);
         }
     }
@@ -141,12 +148,14 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
         FixedClock clock = new FixedClock(ZoneId.systemDefault());
         clock.millis = Instant.parse("2007-12-03T13:15:30.00Z").toEpochMilli();  // just to make sure we are in daylight
         try (FalcoCLI cli = new FalcoCLI()) {
-            Clip clip = (Clip)PrivateAccess.getInstanceValue(cli, "clip");
-            clip.addLineListener(rec);
-            PrivateAccess.setInstanceValue(cli, "CLOCK", clock);
-            PrivateAccess.setInstanceValue(cli, "lastMoved", LocalDateTime.now(clock).minusHours(24));
+            cli.startup();
 
-            cli.moved();  // first time: play
+            Clip clip = (Clip)PrivateAccess.getInstanceValue(cli.moctor, "clip");
+            clip.addLineListener(rec);
+            PrivateAccess.setInstanceValue(cli.moctor, "CLOCK", clock);
+            PrivateAccess.setInstanceValue(cli.moctor, "lastMoved", LocalDateTime.now(clock).minusHours(24));
+
+            cli.moctor.moved();  // first time: play
 
             new WaitFor(5000, new Condition() {
                 @Override
@@ -156,11 +165,11 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
             });
 
             clock.millis += 5*60*1000;  // 5 minutes later
-            cli.moved();  Thread.sleep(50); // second time in a row: don't play
+            cli.moctor.moved();  Thread.sleep(50); // second time in a row: don't play
             then(rec.events).hasSize(4);
 
             clock.millis += 6*60*1000;  // 11 minutes later
-            cli.moved();  // third time: play
+            cli.moctor.moved();  // third time: play
 
             new WaitFor(5000, new Condition() {
                 @Override
@@ -179,9 +188,10 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
         LOG.addHandler(h);
 
          try (FalcoCLI cli = new FalcoCLI()) {
-             PrivateAccess.setInstanceValue(cli, "lastMoved", LocalDateTime.now().plusMinutes(10));
+             cli.startup();
+             PrivateAccess.setInstanceValue(cli.moctor, "lastMoved", LocalDateTime.now().plusMinutes(10));
 
-             cli.moved();
+             cli.moctor.moved();
 
              then(h.getMessages()).containsExactly("motion detected", "too early or not in day light - I am muted");
          }
@@ -192,13 +202,15 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
         BugFreeSoundMotionDetector.ClipEventsRecorder rec = new BugFreeSoundMotionDetector.ClipEventsRecorder();
 
         try (FalcoCLI cli = new FalcoCLI()) {
-            Clip clip = (Clip)PrivateAccess.getInstanceValue(cli, "clip");
+            cli.startup();
+
+            Clip clip = (Clip)PrivateAccess.getInstanceValue(cli.moctor, "clip");
             clip.addLineListener(rec);
 
             final ZonedDateTime TODAY = ZonedDateTime.now();
 
             FixedClock clock = new FixedClock(TODAY.getZone());
-            PrivateAccess.setInstanceValue(cli, "CLOCK", clock);
+            PrivateAccess.setInstanceValue(cli.moctor, "CLOCK", clock);
 
             //
             // play between 8:00AM and 8:00PM
@@ -211,7 +223,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
                 LocalDateTime datetime = LocalDateTime.of(TODAY.toLocalDate(), time);
                 clock.millis = datetime.toEpochSecond(TODAY.getOffset()) * 1000;
 
-                cli.moved();
+                cli.moctor.moved();
 
                 new WaitFor(5000, new Condition() {
                     @Override
@@ -230,7 +242,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
                 LocalDateTime datetime = LocalDateTime.of(TODAY.toLocalDate(), time);
                 clock.millis = datetime.toEpochSecond(TODAY.getOffset()) * 1000;
 
-                cli.moved(); Thread.sleep(250);
+                cli.moctor.moved(); Thread.sleep(250);
 
                 then(rec.events).isEmpty();
             }
@@ -240,7 +252,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
                 LocalDateTime datetime = LocalDateTime.of(TODAY.toLocalDate(), time);
                 clock.millis = datetime.toEpochSecond(TODAY.getOffset()) * 1000;
 
-                cli.moved(); Thread.sleep(50);
+                cli.moctor.moved(); Thread.sleep(50);
 
                 then(rec.events).isEmpty();
             }
@@ -259,34 +271,34 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
      */
     @Test
     public void get_and_setset_and_get_volume_ok() throws Exception {
-        try (FalcoCLI falco = new FalcoCLI()) {
-            falco.setVolume(0);
-            then(falco.getVolume()).isZero();
+        try (FalcoCLI cli = new FalcoCLI()) {
+            cli.startup();
 
-            falco.setVolume(0.75d);
-            then(falco.getVolume()).isEqualTo(0.75);
+            cli.moctor.setVolume(0);
+            then(cli.moctor.getVolume()).isZero();
 
-            falco.setVolume(2.0d);
-            then(falco.getVolume()).isEqualTo(2.0d);
+            cli.moctor.setVolume(0.75d);
+            then(cli.moctor.getVolume()).isEqualTo(0.75);
+
+            cli.moctor.setVolume(2.0d);
+            then(cli.moctor.getVolume()).isEqualTo(2.0d);
         }
     }
 
     @Test
-    public void get_and_setset_and_get_volume_out_of_range() throws Exception {
-        try (FalcoCLI falco = new FalcoCLI()) {
-            falco.setVolume(-0.4);
+    public void set_volume_out_of_range() throws Exception {
+        try (FalcoCLI cli = new FalcoCLI()) {
+            cli.startup(); cli.moctor.setVolume(-0.4);
         } catch (IllegalArgumentException x) {
             then(x).hasMessage("invalid volume -0.4 - it must in range (0.0, 2.0)");
         }
 
-        try (FalcoCLI falco = new FalcoCLI()) {
-            falco.setVolume(2.1);
+        try (FalcoCLI cli = new FalcoCLI()) {
+            cli.startup(); cli.moctor.setVolume(2.1);
         } catch (IllegalArgumentException x) {
             then(x).hasMessage("invalid volume 2.1 - it must in range (0.0, 2.0)");
         }
     }
-
-
 
     // ------------------------------------------------------------- CounterTask
 
@@ -303,4 +315,6 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
             ++value;
         }
     }
+
+    // --------------------------------------------------------- private methods
 }

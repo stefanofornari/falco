@@ -82,7 +82,6 @@ public class SoundMotionDetector implements AutoCloseable {
     }
 
     public void moved() {
-        System.out.println("CHECK2.1");
         if (clip == null) {
             throw new IllegalStateException("moved() called before the instance is started up; make sure to call startup()");
         }
@@ -93,9 +92,7 @@ public class SoundMotionDetector implements AutoCloseable {
         if (shallPlay()) {
             lastMoved = LocalDateTime.now(CLOCK);
             clip.setFramePosition(0);
-            System.out.println("CHECK2.2");
             clip.start();
-            System.out.println("CHECK2.3");
         } else {
             if (LOG.isLoggable(Level.INFO)) {
                 LOG.info("too early or not in day light - I am muted");
@@ -157,7 +154,6 @@ public class SoundMotionDetector implements AutoCloseable {
 
         @Override
         public void update(LineEvent e) {
-            System.out.println("CHECK3 " + e);
             if (LOG.isLoggable(Level.FINEST)) {
                 if (e.getType() == LineEvent.Type.START) {
                     LOG.finest("playing " + sound);

@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
+import ste.falco.SoundMotionDetector;
 import ste.falco.ui.FalcoCLI.TrafficControl;
 import ste.falco.ui.FalcoCLI.TrafficControlMBean;
+import ste.xtest.reflect.PrivateAccess;
 
 /**
  * NOTE: inheriting from BugFreeCLIBase to take advantage of PIR clean up
@@ -66,10 +68,10 @@ public class BugFreeTraffifControlMBean extends BugFreeCLIBase {
         TrafficControlMBean bean = new TrafficControl(stub);
 
         bean.setVolume(0);
-        then(stub.moctor.getVolume()).isEqualTo(0.0);
+        then(stub.EVENTS).containsExactly("set_volume 0.0"); stub.EVENTS.clear();
 
         bean.setVolume(1.0);
-        then(stub.moctor.getVolume()).isEqualTo(1.0);
+        then(stub.EVENTS).containsExactly("set_volume 1.0"); stub.EVENTS.clear();
     }
 
     // --------------------------------------------------------- private methods
@@ -82,12 +84,22 @@ public class BugFreeTraffifControlMBean extends BugFreeCLIBase {
 
         private FalcoCLIStub() throws Exception {
             super();
-            this.EVENTS = new ArrayList<>();
+            this.EVENTS = new ArrayList();
+            startup();
         }
 
         @Override
-        public void moved() {
-            EVENTS.add("moved");
+        public void startup() throws Exception {
+            PrivateAccess.setInstanceValue(this, "moctor", new SoundMotionDetector("/sounds/test1.wav") {
+                @Override
+                public void moved() {
+                    EVENTS.add("moved");
+                }
+                @Override
+                public void setVolume(double volume) {
+                    EVENTS.add("set_volume " + volume);
+                }
+            });
         }
 
         @Override

@@ -5,7 +5,7 @@ Raspberry PI based pigeons dissuader
 Connect RIP
 -----------
 See (https://tutorials-raspberrypi.com/connect-and-control-raspberry-pi-motion-detector-pir/ -
-src/docs/Connect and control Raspberry Pi motion detector PIR.pdf inc ase not
+src/docs/Connect and control Raspberry Pi motion detector PIR.pdf in case not
 available any more online)
 
 Features

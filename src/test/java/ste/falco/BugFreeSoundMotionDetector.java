@@ -176,6 +176,29 @@ public class BugFreeSoundMotionDetector extends BugFreePIRBase {
         }
     }
 
+    @Test
+    public void shotdown_closes_and_nulls_the_clip() throws Exception {
+        SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav");
+
+        smd.startup();
+        Clip clip = smd.clip;
+        smd.shutdown();
+
+        then(clip.isOpen()).isFalse();
+        then(smd.clip).isNull();
+    }
+
+    @Test
+    public void isLive_returns_true_when_live_false_otherwise() throws Exception  {
+        SoundMotionDetector smd = new SoundMotionDetector("/sounds/test1.wav");
+
+        then(smd.isLive()).isFalse();
+        smd.startup();
+        then(smd.isLive()).isTrue();
+        smd.shutdown();
+        then(smd.isLive()).isFalse();
+    }
+
     // --------------------------------------------------------- private methods
 
     private Mixer getMixerWithErrorInGetLine(Mixer mixer) throws Exception {

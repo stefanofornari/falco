@@ -89,7 +89,6 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
             }
 
         });
-        System.out.println(h.getMessages());
         then(h.getMessages(Level.FINEST)).contains("playing /sounds/red-tailed-hawk-sound.wav");
     }
 
@@ -110,12 +109,12 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
         new WaitFor(5000, new Condition() {
             @Override
             public boolean check() {
-                return (h.getMessages().size() >= 3);
+                return (h.getMessages().size() >= 5);
             }
 
         });
         then(h.getMessages()).containsExactly(
-            "falco started", "falco recycled", "falco started"
+            "heartbeat disabled", "falco started", "falco recycled", "heartbeat disabled", "falco started"
         );
     }
 
@@ -125,7 +124,7 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
         Executors.newCachedThreadPool().submit(new Runnable() {
             @Override
             public void run() {
-                try { FalcoCLI.main("--nogpio"); } catch (Exception x) {};
+                try { FalcoCLI.main("--nogpio", "--noheartbeat"); } catch (Exception x) {};
             }
         });
     }

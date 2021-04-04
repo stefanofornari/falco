@@ -68,23 +68,25 @@ public class SoundMotionDetector implements AutoCloseable {
         clip = SoundUtils.getClip(mixer);
         clip.addLineListener(new MotionClipListener());
         clip.open(
-                AudioSystem.getAudioInputStream(
-                        new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
-                )
+            AudioSystem.getAudioInputStream(
+                new ByteArrayInputStream(IOUtils.resourceToByteArray(sound))
+            )
         );
     }
 
-    //
-    // TODO: write bugfreecode
-    //
+    /**
+     * Close the clip and null its reference (i.e. islive() returns false() )
+     */
     public void shutdown() {
         clip.close();
         clip = null;
     }
 
-    //
-    // TODO: write bugfreecode
-    //
+    /**
+     * Returns true when there is a valid clip to play
+     *
+     * @return true when there is a valid clip to play, false otherwise
+     */
     public boolean isLive() {
         return (clip != null);
     }

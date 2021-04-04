@@ -53,8 +53,6 @@ public class FalcoCLI implements AutoCloseable {
     private Heartbeat heartbeatTask;
 
     public        final SoundMotionDetector moctor;
-    public static final FalcoOptions DEFAULTS = new FalcoOptions();
-
     public static final String SOUND = "/sounds/red-tailed-hawk-sound.wav";
 
     public static void main(String... args) {
@@ -108,7 +106,7 @@ public class FalcoCLI implements AutoCloseable {
      * @throws Exception in case of errors
      */
     public FalcoCLI() {
-        this(DEFAULTS);
+        this(new FalcoOptions(true, true));
     }
 
     /**
@@ -131,7 +129,7 @@ public class FalcoCLI implements AutoCloseable {
             }
         } else {
             if (LOG.isLoggable(Level.INFO)) {
-                LOG.info("Heartbeat disabled");
+                LOG.info("heartbeat disabled");
             }
         }
     }
@@ -148,6 +146,9 @@ public class FalcoCLI implements AutoCloseable {
         }
     }
 
+    //
+    //  TODO: close hearthbeat
+    //
     public void shutdown() {
         try {
             moctor.shutdown();
@@ -230,6 +231,9 @@ public class FalcoCLI implements AutoCloseable {
     )
     protected static class FalcoOptions implements Runnable {
 
+        public static final boolean DEFAULT_NOGPIO = false;
+        public static final boolean DEFAULT_NOHEARTBEAT = false;
+
         @Option(
                 names = {"--help", "-h"},
                 description = "This help message",
@@ -241,13 +245,23 @@ public class FalcoCLI implements AutoCloseable {
                 names = {"--noheartbeat"},
                 description = "Do not play the heartbeat"
         )
-        public boolean noHeartbeat = false;
+        public boolean noHeartbeat = DEFAULT_NOHEARTBEAT;
 
         @Option(
                 names = {"--nogpio"},
                 description = "Do not use GPIO"
         )
-        public boolean noGPIO = false;
+        public boolean noGPIO = DEFAULT_NOGPIO;
+
+
+        protected FalcoOptions(boolean noGPIO, boolean noHeartbeat) {
+            this.noGPIO = noGPIO;
+            this.noHeartbeat = noHeartbeat;
+        }
+
+        protected FalcoOptions() {
+            this(DEFAULT_NOGPIO, DEFAULT_NOHEARTBEAT);
+        }
 
         @Override
         public void run() {

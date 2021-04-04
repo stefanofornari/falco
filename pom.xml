@@ -99,7 +99,7 @@
                             junit.jupiter.testinstance.lifecycle.default = per_class
                         </configurationParameters>
                     </properties-->
-                    <forkCount>1</forkCount>
+                    <forkCount></forkCount>
                     <reuseForks>false</reuseForks>
                     <parallel>classes</parallel>
                     <threadCount>1</threadCount>

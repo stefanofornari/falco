@@ -84,7 +84,6 @@ public class MotionDetector
     // TODO: to review with the new hierarchy
     //
     public void moved() {
-        System.out.println("CHECK1");
         if (PIN == null) {
             throw new IllegalStateException("moved() called before the instance is started up; make sure to call startup()");
         }

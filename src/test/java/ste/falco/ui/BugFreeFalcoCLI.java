@@ -20,8 +20,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import javax.sound.sampled.Clip;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -35,114 +33,23 @@ import ste.xtest.reflect.PrivateAccess;
 import ste.xtest.time.FixedClock;
 
 /**
- * TODO: cli.moctor.move() ddoes not make sense, we need to simulate a move via
+ * TODO: cli.moctor.move() does not make sense, we need to simulate a move via
  * a provider
  */
 public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
-    private static final LocalTime MORNING = LocalTime.of(8, 0);
-    private static final LocalTime NIGHT = LocalTime.of(20, 0);
-
-    @Test
-    public void help() throws Exception {
-        //
-        // NOTE: if help is invoked, the process shall exit immediately
-        //
-        Future f = Executors.newCachedThreadPool().submit(new Runnable() {
-            @Override
-            public void run() {
-                try { FalcoCLI.main("--help"); } catch (Exception x) {};
-            }
-        });
-
-        Thread.sleep(500); // let's give the service the time to start and stay up
-
-        then(f.isDone()).isTrue();
-        then(STDOUT.getLog()).contains("Welcome to Falco")
-                             .contains("Usage:")
-                             .contains("ste.falco.FalcoCLI");
-    }
-
-    @Test
-    public void unkown_parameter() throws Exception {
-        Future f = Executors.newCachedThreadPool().submit(new Runnable() {
-            @Override
-            public void run() {
-                try { FalcoCLI.main("--invalidoption"); } catch (Exception x) {};
-            }
-        });
-        Thread.sleep(500); // let's give the service the time to start and stay up
-
-        then(f.isDone()).isTrue();
-        then(STDOUT.getLog())
-            .contains("Unknown option: '--invalidoption'")
-            .contains("Usage:")
-            .doesNotContain("-- started");
-    }
-
-    @Test
-    public void start_service() throws Exception {
-        Future f = Executors.newCachedThreadPool().submit(new Runnable() {
-            @Override
-            public void run() {
-                try { FalcoCLI.main(); } catch (Exception x) {};
-            }
-        });
-
-        Thread.sleep(500); // let's give the service the time to start and stay up
-
-        then(f.isDone()).isFalse();
-        then(STDOUT.getLog()).contains("Welcome to Falco\n-- started")
-                             .doesNotContain("Usage:");
-    }
-
-    @Test
-    public void log_motion_event() throws Exception {
-        Logger LOG = Logger.getLogger("ste.falco");
-        ListLogHandler h = new ListLogHandler();
-        LOG.addHandler(h);
-
-        Executors.newCachedThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-                try { FalcoCLI.main(); } catch (Exception x) {};
-            }
-        });
-
-        Thread.sleep(500); // let's give the service the time to start and stay up
-
-        //
-        // caveat: if the test runs outside the daylight window, we have one more log message
-        //
-        final LocalTime now = LocalTime.now();
-
-        PIR.up(); Thread.sleep(50); PIR.down();
-        if (now.isAfter(MORNING) && now.isBefore(NIGHT)) {
-            then(h.getMessages()).containsExactly("falco started", "motion detected");
-        } else {
-            then(h.getMessages()).containsExactly("falco started", "motion detected", "too early or not in day light - I am muted");
-        }
-
-        PIR.up(); Thread.sleep(50); PIR.down();
-        if (now.isAfter(MORNING) && now.isBefore(NIGHT)) {
-            then(h.getMessages()).containsExactly("falco started", "motion detected", "motion detected", "too early or not in day light - I am muted");
-        } else {
-            then(h.getMessages()).containsExactly("falco started", "motion detected", "too early or not in day light - I am muted", "motion detected", "too early or not in day light - I am muted");
-        }
-
-        LOG.removeHandler(h);
-    }
 
     @Test
     public void heartbeat() throws Exception {
-        try (FalcoCLI cli = new FalcoCLI()) {
+        final FalcoCLI.FalcoOptions OPTIONS = new FalcoCLI.FalcoOptions(true, false);
+        try (FalcoCLI cli = new FalcoCLI(OPTIONS)) {
             cli.startup();
             Heartbeat hb = (Heartbeat)PrivateAccess.getInstanceValue(cli, "heartbeatTask");
             then(hb.period).isEqualTo(5*60*1000); // 5 minutes in milliseconds
         }
 
         CounterTask counter = new CounterTask(25);
-        try (FalcoCLI cli = new FalcoCLI()) {
+        try (FalcoCLI cli = new FalcoCLI(OPTIONS)) {
             PrivateAccess.setInstanceValue(cli, "heartbeatTask", counter);
             cli.startup();
 
@@ -150,7 +57,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
         }
 
         counter = new CounterTask(50);
-        try (FalcoCLI cli = new FalcoCLI()) {
+        try (FalcoCLI cli = new FalcoCLI(OPTIONS)) {
             PrivateAccess.setInstanceValue(cli, "heartbeatTask", counter);
             cli.startup();
 
@@ -210,7 +117,7 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
 
              cli.moctor.moved();
 
-             then(h.getMessages()).containsExactly("motion detected", "too early or not in day light - I am muted");
+             then(h.getMessages()).containsExactly("heartbeat disabled", "motion detected", "too early or not in day light - I am muted");
          }
     }
 
@@ -303,17 +210,27 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
     }
 
     @Test
-    public void set_volume_out_of_range() throws Exception {
+    public void set_volume_out_of_range_too_small() throws Exception {
         try (FalcoCLI cli = new FalcoCLI()) {
             cli.startup(); cli.moctor.setVolume(-0.4);
         } catch (IllegalArgumentException x) {
             then(x).hasMessage("invalid volume -0.4 - it must in range (0.0, 2.0)");
         }
+    }
 
+    @Test
+    public void set_volume_out_of_range_too_big() throws Exception {
         try (FalcoCLI cli = new FalcoCLI()) {
             cli.startup(); cli.moctor.setVolume(2.1);
         } catch (IllegalArgumentException x) {
             then(x).hasMessage("invalid volume 2.1 - it must in range (0.0, 2.0)");
+        }
+    }
+
+    @Test
+    public void shutdown() throws Exception {
+        try (FalcoCLI cli = new FalcoCLI()) {
+
         }
     }
 

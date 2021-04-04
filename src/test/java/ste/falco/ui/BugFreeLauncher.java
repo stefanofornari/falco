@@ -67,7 +67,7 @@ public class BugFreeLauncher {
 
     @Test
     public void no_heartbeat() throws Exception {
-        String[] ret = launch(3000, false, false, "--noheartbeat");
+        String[] ret = launch(3000, false, false, "--nogpio", "--noheartbeat");
         thenFileContainsButNot(new File(ret[0], "logs/falco.0.log"), "Heartbeat disabled", "heartbeat");
     }
 

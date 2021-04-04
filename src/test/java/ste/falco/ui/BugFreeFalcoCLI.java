@@ -64,6 +64,23 @@ public class BugFreeFalcoCLI extends BugFreeCLIBase {
     }
 
     @Test
+    public void unkown_parameter() throws Exception {
+        Future f = Executors.newCachedThreadPool().submit(new Runnable() {
+            @Override
+            public void run() {
+                try { FalcoCLI.main("--invalidoption"); } catch (Exception x) {};
+            }
+        });
+        Thread.sleep(500); // let's give the service the time to start and stay up
+
+        then(f.isDone()).isTrue();
+        then(STDOUT.getLog())
+            .contains("Unknown option: '--invalidoption'")
+            .contains("Usage:")
+            .doesNotContain("-- started");
+    }
+
+    @Test
     public void start_service() throws Exception {
         Future f = Executors.newCachedThreadPool().submit(new Runnable() {
             @Override

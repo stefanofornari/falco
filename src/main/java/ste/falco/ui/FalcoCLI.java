@@ -17,6 +17,7 @@ package ste.falco.ui;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,7 +38,6 @@ import org.apache.commons.io.IOUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
 import ste.falco.MotionDetector;
 import ste.falco.SoundMotionDetector;
 import ste.falco.SoundUtils;
@@ -55,13 +55,17 @@ public class FalcoCLI implements AutoCloseable {
     public        final SoundMotionDetector moctor;
     public static final FalcoOptions DEFAULTS = new FalcoOptions();
 
+    public static final String SOUND = "/sounds/red-tailed-hawk-sound.wav";
+
     public static void main(String... args) {
         System.out.println("Welcome to Falco");
 
         FalcoCLI.FalcoOptions options = new FalcoCLI.FalcoOptions();
         CommandLine cli = new CommandLine(options);
-        try {
-            cli.execute(args);
+        cli.setErr(new PrintWriter(System.out));
+        int status = cli.execute(args);
+
+        /*
         } catch (ParameterException x) {
             //
             // picocli shows already the error message and the usage.
@@ -70,8 +74,9 @@ public class FalcoCLI implements AutoCloseable {
             cli.usage(System.out);
             return;
         }
+        */
 
-        if (cli.isUsageHelpRequested()) {
+        if ((status != 0) || cli.isUsageHelpRequested()) {
             return;
         }
 
@@ -113,7 +118,8 @@ public class FalcoCLI implements AutoCloseable {
      * @throws Exception same as startup()
      */
     public FalcoCLI(FalcoCLI.FalcoOptions options) {
-        moctor = new MotionDetector("/sounds/red-tailed-hawk-sound.wav");
+        moctor = (options.noGPIO) ? new SoundMotionDetector(SOUND)
+                                  : new MotionDetector(SOUND);
         heartbeatTask = null;
 
         if (!options.noHeartbeat) {
@@ -144,10 +150,7 @@ public class FalcoCLI implements AutoCloseable {
 
     public void shutdown() {
         try {
-            //
-            // TODO: to fix based on the type...
-            //
-            ((MotionDetector)moctor).shutdown();
+            moctor.shutdown();
             jmxShutdown();
         } catch (Exception x) {
             x.printStackTrace();
@@ -225,7 +228,7 @@ public class FalcoCLI implements AutoCloseable {
             name = "ste.falco.FalcoCLI",
             description = "A pigeon dissuader that plays the sound of a red tailed hawk"
     )
-    protected static class FalcoOptions {
+    protected static class FalcoOptions implements Runnable {
 
         @Option(
                 names = {"--help", "-h"},
@@ -245,6 +248,10 @@ public class FalcoCLI implements AutoCloseable {
                 description = "Do not use GPIO"
         )
         public boolean noGPIO = false;
+
+        @Override
+        public void run() {
+        }
     }
 
     // ---------------------------------------------------------- TrafficControl

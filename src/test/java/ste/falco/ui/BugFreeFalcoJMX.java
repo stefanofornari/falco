@@ -107,7 +107,7 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
             "reinit", null, null
         );
 
-        new WaitFor(1000, new Condition() {
+        new WaitFor(5000, new Condition() {
             @Override
             public boolean check() {
                 return (h.getMessages().size() >= 3);
@@ -125,13 +125,13 @@ public class BugFreeFalcoJMX extends BugFreeCLIBase {
         Executors.newCachedThreadPool().submit(new Runnable() {
             @Override
             public void run() {
-                try { FalcoCLI.main(); } catch (Exception x) {};
+                try { FalcoCLI.main("--nogpio"); } catch (Exception x) {};
             }
         });
     }
 
     private MBeanServer waitForTrafficControl() {
-        new WaitFor(500, new Condition() {
+        new WaitFor(5000, new Condition() {
             @Override
             public boolean check() {
                 try {

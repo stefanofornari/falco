@@ -36,6 +36,7 @@ public class MotionDetector
         super(sound);
     }
 
+    @Override
     public void startup() throws Exception {
         super.startup();
         PIN = GpioFactory.getInstance()
@@ -47,6 +48,7 @@ public class MotionDetector
      * For now we just unprovision the pin, we do not shutdown the GPIO
      * controller.
      */
+    @Override
     public void shutdown() {
         if (PIN != null) {
             GpioFactory.getInstance().unprovisionPin(PIN);

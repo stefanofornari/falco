@@ -75,7 +75,15 @@ public class SoundMotionDetector implements AutoCloseable {
     }
 
     //
-    // TODO: writye bugfreecode
+    // TODO: write bugfreecode
+    //
+    public void shutdown() {
+        clip.close();
+        clip = null;
+    }
+
+    //
+    // TODO: write bugfreecode
     //
     public boolean isLive() {
         return (clip != null);

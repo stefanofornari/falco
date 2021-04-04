@@ -110,13 +110,21 @@ public class BugFreeLauncher {
 
 
         Process p = pb.start(); p.waitFor(timeout, TimeUnit.MILLISECONDS);
+        System.out.println("PID: " + p.pid());
+        for (Object h: p.children().toArray()) {
+            System.out.println("  " + ((ProcessHandle)h).pid());
+        }
         if (readOut) {
             ret[1] = new String(p.getInputStream().readAllBytes());
         } else {
             ret[1] = null;
         }
 
+        for (Object h: p.children().toArray()) {
+            ((ProcessHandle)h).destroy();
+        }
         p.destroy(); // just in case the process did not end
+
 
         return ret;
     }
